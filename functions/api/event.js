@@ -37,18 +37,5 @@ export async function onRequestPost({ request, env }) {
     // KV unavailable, transient — drop quietly
   }
 
-  // Also write to Analytics Engine if bound. AE is the source for the Cloudflare
-  // dashboard view (time-series charts, SQL queries). KV remains the source for
-  // the simple JSON /api/stats endpoint. Both are kept in sync per event.
-  try {
-    env.ANALYTICS?.writeDataPoint({
-      blobs: [event],
-      doubles: [1],
-      indexes: [event],
-    });
-  } catch {
-    // AE unavailable, transient — drop quietly
-  }
-
   return new Response(null, { status: 204 });
 }
