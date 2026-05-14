@@ -337,7 +337,7 @@
 
     <footer class="splash-footer">
       <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder</div>
-      <div class="fine-print">Your deck files never leave your device. Hosted on Cloudflare &middot; aggregate analytics only, no cookies, no individual tracking.</div>
+      <div class="fine-print">Your deck files never leave your device. Hosted on Cloudflare &middot; aggregate visit and usage counts only (e.g. &ldquo;a file was imported today&rdquo;) &middot; no cookies, no identifiers, no individual tracking.</div>
     </footer>
   </div>
 </div>
@@ -414,6 +414,23 @@ const els = {
   pathBtn: $('path-btn'),
   labelsBtn: $('labels-btn'),
 };
+
+// ---------- usage counter ----------
+// Fire-and-forget POST to a Pages Function that increments an integer-per-event
+// counter in KV. No identifiers, no IPs, no fingerprinting — just aggregate
+// counts of "this event happened today". keepalive lets export-then-leave
+// signals still fire after the user closes the tab.
+
+function logEvent(event) {
+  try {
+    fetch('/api/event', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ event }),
+      keepalive: true,
+    }).catch(() => {});
+  } catch {}
+}
 
 // ---------- session autosave ----------
 // sessionStorage (per-tab, not persistent across close) snapshots the editor
@@ -570,6 +587,7 @@ function ingestFile(name, html) {
   }
   els.body.classList.add('has-decks');
   recompute();
+  logEvent('upload');
 }
 
 async function readFiles(files) {
@@ -621,9 +639,10 @@ async function ingestPptx(file) {
     if (!slidesHtml || slidesHtml.length === 0) throw new Error('No slides rendered');
     const synthetic = pptxToSyntheticDeck(file.name, slidesHtml);
     ingestFile(file.name, synthetic);
+    logEvent('pptx_imported');
   } catch (err) {
     console.error('PPTX import failed:', err);
-    alert(`Could not import ${file.name}.\n\n${err && err.message ? err.message : err}\n\nIf this is the first .pptx you've imported, make sure ./lib/pptx.js is deployed alongside the app (loaded locally first, jsdelivr CDN as fallback).`);
+    alert(`Couldn't import ${file.name}.\n\nThe file may be corrupted, password-protected, or in the older .ppt format (Mixdeck only supports .pptx).\n\nTry re-saving from PowerPoint or Keynote as .pptx and importing again.`);
   } finally {
     if (els.counter.textContent.startsWith('converting')) els.counter.textContent = prevCounter;
   }
@@ -858,6 +877,7 @@ const STARTER_TEMPLATE = `<!DOCTYPE html>
 
 $('choose-btn').onclick = () => els.fileInput.click();
 $('samples-btn').onclick = () => {
+  logEvent('samples');
   ingestFile('maya.html', SAMPLE_MAYA);
   ingestFile('jordan.html', SAMPLE_JORDAN);
 };
@@ -885,6 +905,7 @@ $('samples-btn').onclick = () => {
   restoreBtn.onclick = () => {
     restoreSession(payload);
     banner.remove();
+    logEvent('restore');
   };
   const dismissBtn = document.createElement('button');
   dismissBtn.className = 'restore-dismiss';
@@ -1260,6 +1281,7 @@ els.canvasIframe.addEventListener('load', () => {
 
 function downloadExport() {
   if (state.manifest.length === 0) { alert('Nothing to export — drop a deck file in first.'); return; }
+  logEvent('export');
   const deckName = ($('deck-name').value || 'Presentation').trim();
   const data = {
     deckName,
@@ -1473,6 +1495,7 @@ function togglePresent() {
   // requestFullscreen will silently fail; the chrome still hides and Esc / F still exits.
   els.body.classList.toggle('presenting', goingIn);
   if (goingIn) {
+    logEvent('present');
     const req = document.documentElement.requestFullscreen
              || document.documentElement.webkitRequestFullscreen;
     if (req) { try { const p = req.call(document.documentElement); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
