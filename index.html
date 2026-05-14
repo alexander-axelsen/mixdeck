@@ -105,6 +105,7 @@
   .limits-list code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
   .splash-footer { text-align: center; color: #555; font-size: 12px; padding-top: 24px; border-top: 1px solid #2a2a2a; }
   .splash-footer kbd { background: #2a2a2a; color: #ccc; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-family: 'SF Mono', Menlo, monospace; margin: 0 2px; }
+  .splash-footer .fine-print { margin-top: 12px; color: #444; font-size: 11px; line-height: 1.55; }
 
   /* Session-restore banner — injected by JS only when a prior session is found. */
   .restore-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #1f2937; border-left: 3px solid #2563eb; padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; color: #e5e7eb; font-size: 13.5px; opacity: 0; animation: restoreFade .25s ease forwards; }
@@ -185,10 +186,15 @@
   #path-overlay[data-position="left"]   .path-line,
   #path-overlay[data-position="right"]  .path-line { width: 1px; height: 8px; margin: 0 auto; }
 
-  body.presenting #topbar, body.presenting #thumbs { display: none; }
+  body.presenting #topbar, body.presenting #thumbs, body.presenting #editor-footer { display: none; }
   body.presenting #main { padding: 0; }
   body.presenting #canvas-wrap { padding: 0; }
   body.presenting #canvas { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+
+  /* Editor footer with keyboard shortcuts. Mirrors the splash footer hint so users
+     see the same affordance whether they're picking files or already editing. */
+  #editor-footer { flex-shrink: 0; padding: 8px 16px; border-top: 1px solid #2a2a2a; background: #1a1a1a; color: #555; font-size: 11px; text-align: center; }
+  #editor-footer kbd { background: #2a2a2a; color: #ccc; padding: 2px 7px; border-radius: 3px; font-size: 10px; font-family: 'SF Mono', Menlo, monospace; margin: 0 2px; }
 
   /* color-coded source badges */
   .src-0 { background: #ef4444 !important; }
@@ -325,13 +331,13 @@
           <li><strong>No undo. Tab-level autosave only.</strong> Refreshing the page offers a one-click restore. Closing the tab clears the state. Use <strong>Export</strong> to save permanently as a single HTML file.</li>
           <li><strong>Reordering can break deck-internal JS state.</strong> When slides are pulled out of their original sequence, Mixdeck loads them one at a time. JS that depends on multi-slide state in the source deck (counters, state machines) only runs correctly when a full original block is in your timeline.</li>
           <li><strong>Editing is mouse-only.</strong> Drag-to-import and drag-to-reorder don't work on touch devices. Presenting and keyboard navigation work anywhere.</li>
-          <li><strong>Hosted on Cloudflare. Aggregate analytics, no individual tracking.</strong> Cloudflare Web Analytics records page-view counts, browser/OS, and country via a small first-party-style beacon. No cookies, no individual identifiers, no third-party advertising trackers. Your deck files never touch our servers — everything happens in your browser.</li>
         </ul>
       </div>
     </section>
 
     <footer class="splash-footer">
-      <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder
+      <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder</div>
+      <div class="fine-print">Your deck files never leave your device. Hosted on Cloudflare &middot; aggregate analytics only, no cookies, no individual tracking.</div>
     </footer>
   </div>
 </div>
@@ -350,6 +356,9 @@
   <div id="main">
     <div id="thumbs"></div>
     <div id="canvas-wrap"><div id="canvas"><iframe id="canvas-iframe"></iframe><div id="path-overlay" data-position="top"></div></div></div>
+  </div>
+  <div id="editor-footer">
+    <kbd>&larr;</kbd> <kbd>&rarr;</kbd> <kbd>&uarr;</kbd> <kbd>&darr;</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder
   </div>
 </div>
 
