@@ -306,9 +306,10 @@
           <li><strong>PowerPoint conversion is approximate.</strong> Fonts may substitute and some complex shapes or chart effects render imperfectly. Always preview before presenting.</li>
           <li><strong>PowerPoint conversion uses a small bundled JS library (~200&nbsp;KB),</strong> loaded the first time you import a <code>.pptx</code>. Files themselves are never uploaded.</li>
           <li><strong>HTML decks must match the format spec.</strong> Reveal.js, Slides.com exports, Google Slides HTML, and similar formats won't work as-is. The <strong>AI prompt</strong> above can convert most decks in one shot.</li>
-          <li><strong>No undo, no autosave.</strong> Page reload clears the order. Use <strong>Export</strong> before closing the tab to keep your work as a single HTML file.</li>
+          <li><strong>No undo. Tab-level autosave only.</strong> Refreshing the page offers a one-click restore. Closing the tab clears the state. Use <strong>Export</strong> to save permanently as a single HTML file.</li>
           <li><strong>Reordering can break deck-internal JS state.</strong> When slides are pulled out of their original sequence, Mixdeck loads them one at a time. JS that depends on multi-slide state in the source deck (counters, state machines) only runs correctly when a full original block is in your timeline.</li>
           <li><strong>Editing is mouse-only.</strong> Drag-to-import and drag-to-reorder don't work on touch devices. Presenting and keyboard navigation work anywhere.</li>
+          <li><strong>Hosted on Cloudflare. Aggregate analytics, no individual tracking.</strong> Cloudflare Web Analytics records page-view counts, browser/OS, and country via a small first-party-style beacon. No cookies, no individual identifiers, no third-party advertising trackers. Your deck files never touch our servers — everything happens in your browser.</li>
         </ul>
       </div>
     </section>
