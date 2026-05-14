@@ -46,6 +46,7 @@
   body.has-decks #splash { display: none; }
   .splash-inner { width: 100%; max-width: 880px; }
   .splash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 56px; }
+  .splash-links { display: flex; gap: 20px; align-items: center; }
   .splash-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -.3px; color: #f5f5f5; }
   .splash-logo .mark { width: 22px; height: 22px; background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%); border-radius: 5px; box-shadow: 0 2px 8px rgba(37,99,235,.4); }
   .splash-header a { color: #888; text-decoration: none; font-size: 13px; transition: color .15s; }
@@ -219,7 +220,10 @@
   <div class="splash-inner">
     <header class="splash-header">
       <div class="splash-logo"><div class="mark"></div><span>Mixdeck</span></div>
-      <a href="https://github.com/alexander-axelsen/mixdeck" id="github-link" target="_blank" rel="noopener">GitHub &nearr;</a>
+      <div class="splash-links">
+        <a href="mailto:hello@mixdeck.app">hello@mixdeck.app</a>
+        <a href="https://github.com/alexander-axelsen/mixdeck" id="github-link" target="_blank" rel="noopener">GitHub &nearr;</a>
+      </div>
     </header>
 
     <section class="splash-hero">
