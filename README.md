@@ -11,7 +11,7 @@ Free in-browser tool that combines HTML and PowerPoint slide decks into one pres
 - **Mix HTML and PowerPoint.** Drop `.html` or `.pptx` files; both land on one timeline you can reorder freely.
 - **Native HTML playback.** HTML decks load with their original CSS and JS intact — animations replay natively when slides run in their source order. PowerPoint slides come through as static layouts.
 - **Export as one file.** Download a single self-contained HTML file. Recipients open it like any other web page — no app needed.
-- **Private by default.** No upload, no signup, no cookies, no individual tracking. Files never leave your device. Hosted on Cloudflare; aggregate page-view counts and anonymous usage counters (e.g. *"a file was imported today"*) are stored so I can see if the tool is useful. No identifiers, no IPs retained, no fingerprinting.
+- **Private by default.** No server upload, no signup, no cookies, no individual tracking. Files never leave your device. Hosted on Cloudflare; aggregate page-view counts and anonymous usage counters (e.g. *"a file was imported today"*) are stored so I can see if the tool is useful. No identifiers, no IPs retained, no fingerprinting.
 
 ## Quick start
 
