@@ -103,7 +103,7 @@
   .limits-list li:last-child { margin-bottom: 0; }
   .limits-list strong { color: #e5e5e5; font-weight: 600; }
   .limits-list code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
-  .splash-footer { text-align: center; color: #555; font-size: 12px; padding-top: 24px; border-top: 1px solid #2a2a2a; }
+  .splash-footer { width: 100%; max-width: 1100px; margin: 0 auto; text-align: center; color: #555; font-size: 12px; padding-top: 24px; border-top: 1px solid #2a2a2a; }
   .splash-footer kbd { background: #2a2a2a; color: #ccc; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-family: 'SF Mono', Menlo, monospace; margin: 0 2px; }
   .splash-footer .fine-print { margin-top: 12px; color: #444; font-size: 11px; line-height: 1.55; }
 
@@ -334,12 +334,12 @@
         </ul>
       </div>
     </section>
-
-    <footer class="splash-footer">
-      <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder</div>
-      <div class="fine-print">Your deck files never leave your device. Hosted on Cloudflare &middot; aggregate visit and usage counts only (e.g. &ldquo;a file was imported today&rdquo;) &middot; no cookies, no identifiers, no individual tracking.</div>
-    </footer>
   </div>
+
+  <footer class="splash-footer">
+    <div><kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder</div>
+    <div class="fine-print">Your deck files never leave your device. Hosted on Cloudflare &middot; aggregate visit and usage counts only (e.g. &ldquo;a file was imported today&rdquo;) &middot; no cookies, no identifiers, no individual tracking.</div>
+  </footer>
 </div>
 
 <div id="app">
