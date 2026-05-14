@@ -1,0 +1,1914 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Mixdeck — combine PowerPoint and HTML slides into one presentation</title>
+<meta name="description" content="Free tool to merge PPTX and HTML slide decks into one presentation. Mix slides from multiple files, reorder visually, export as a single self-contained HTML file. Runs entirely in your browser — no upload, no signup.">
+<meta name="keywords" content="combine powerpoint slides, merge pptx, merge html decks, presentation mixer, combine slides online, slide deck combiner, html slides, pptx to html">
+<meta name="theme-color" content="#1a1a1a">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Mixdeck — combine PowerPoint and HTML slides into one presentation">
+<meta property="og:description" content="Mix slides from multiple PPTX and HTML decks onto one timeline. Reorder, present, and export as a single self-contained HTML file. Runs in your browser.">
+<meta property="og:url" content="https://mixdeck.app/">
+<link rel="canonical" href="https://mixdeck.app/">
+<meta property="og:image" content="https://mixdeck.app/og-image.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:image" content="https://mixdeck.app/og-image.png">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Mixdeck — combine PowerPoint and HTML slides into one presentation">
+<meta name="twitter:description" content="Mix slides from multiple PPTX and HTML decks onto one timeline. Free, runs in your browser.">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232563eb'/%3E%3Crect x='6' y='9' width='14' height='10' rx='1.5' fill='white' opacity='.95'/%3E%3Crect x='12' y='13' width='14' height='10' rx='1.5' fill='%238b5cf6'/%3E%3C/svg%3E">
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebApplication",
+  "name": "Mixdeck",
+  "description": "Combine PowerPoint and HTML slides into one presentation. Mix slides from multiple decks, reorder visually, and export as a single self-contained HTML file. Runs entirely in the browser.",
+  "applicationCategory": "BusinessApplication",
+  "operatingSystem": "Any",
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" }
+}
+</script>
+<style>
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; font-family: system-ui, -apple-system, sans-serif; background: #1a1a1a; color: #e0e0e0; overflow: hidden; }
+
+  body.dragging::after { content: 'Drop HTML or PPTX deck files'; position: fixed; inset: 0; background: rgba(37, 99, 235, .25); display: flex; align-items: center; justify-content: center; font-size: 32px; color: white; pointer-events: none; z-index: 1000; }
+  body:not(.has-decks).dragging::after { display: none; }
+  body.dragging iframe, body.dragging .thumb { pointer-events: none; }
+
+  /* splash (pre-load landing) */
+  body:not(.has-decks) { overflow: auto; }
+  #splash { display: none; min-height: 100vh; padding: 40px 24px 32px; flex-direction: column; align-items: center; }
+  body:not(.has-decks) #splash { display: flex; }
+  body.has-decks #splash { display: none; }
+  .splash-inner { width: 100%; max-width: 880px; }
+  .splash-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 56px; }
+  .splash-logo { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 17px; letter-spacing: -.3px; color: #f5f5f5; }
+  .splash-logo .mark { width: 22px; height: 22px; background: linear-gradient(135deg, #2563eb 0%, #8b5cf6 100%); border-radius: 5px; box-shadow: 0 2px 8px rgba(37,99,235,.4); }
+  .splash-header a { color: #888; text-decoration: none; font-size: 13px; transition: color .15s; }
+  .splash-header a:hover { color: #ddd; }
+  .splash-hero { text-align: center; margin-bottom: 32px; }
+  .splash-hero h1 { font-size: 44px; margin: 0 0 18px; font-weight: 700; letter-spacing: -1.2px; color: #f5f5f5; line-height: 1.1; }
+  .splash-hero p { font-size: 17px; color: #999; line-height: 1.55; max-width: 580px; margin: 0 auto; }
+  @media (max-width: 600px) { .splash-hero h1 { font-size: 32px; } .splash-hero p { font-size: 15px; } }
+  .dropcard { border: 2px dashed #333; border-radius: 12px; padding: 36px 24px; text-align: center; background: rgba(255,255,255,.015); transition: border-color .2s, background .2s; margin-bottom: 40px; }
+  body.dragging .dropcard { border-color: #2563eb; background: rgba(37,99,235,.08); }
+  .dropcard .drop-title { font-size: 16px; color: #aaa; margin-bottom: 20px; }
+  .dropcard .drop-title code { background: #0d0d0d; padding: 1px 7px; border-radius: 3px; font-size: 13px; color: #fbbf24; }
+  .dropcard .drop-actions { display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+  .dropcard button { background: #2563eb; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background .15s; }
+  .dropcard button:hover { background: #3b82f6; }
+  .dropcard button.secondary { background: #2a2a2a; color: #e0e0e0; }
+  .dropcard button.secondary:hover { background: #3a3a3a; }
+  .features { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-bottom: 32px; }
+  @media (max-width: 700px) { .features { grid-template-columns: 1fr; } }
+  .feature { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 8px; padding: 18px; }
+  .feature .icon { font-size: 20px; margin-bottom: 8px; opacity: .85; color: #60a5fa; }
+  .feature h3 { margin: 0 0 8px; font-size: 14px; color: #e5e5e5; font-weight: 600; }
+  .feature p { margin: 0; font-size: 13px; color: #888; line-height: 1.55; }
+  .feature p code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
+  .spec { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 8px; overflow: hidden; margin-bottom: 32px; }
+  .spec-head { padding: 16px 20px; cursor: pointer; display: flex; justify-content: space-between; align-items: center; user-select: none; transition: background .15s; }
+  .spec-head:hover { background: #222; }
+  .spec-head h3 { margin: 0; font-size: 14px; color: #e5e5e5; font-weight: 600; }
+  .spec-head .caret { color: #666; transition: transform .2s; font-size: 10px; }
+  .spec.open .spec-head .caret { transform: rotate(90deg); }
+  .spec-body { display: none; padding: 0 20px 20px; border-top: 1px solid #2a2a2a; }
+  .spec.open .spec-body { display: block; }
+  .spec-tabs { display: flex; gap: 0; margin: 16px 0; border-bottom: 1px solid #2a2a2a; }
+  .spec-tabs button { background: transparent; color: #888; border: none; padding: 8px 14px; cursor: pointer; font-size: 13px; border-bottom: 2px solid transparent; margin-bottom: -1px; transition: color .15s, border-color .15s; }
+  .spec-tabs button:hover { color: #ccc; }
+  .spec-tabs button.active { color: #e5e5e5; border-bottom-color: #2563eb; }
+  .spec-pane { display: none; }
+  .spec-pane.active { display: block; }
+  .spec-pane p.intro { color: #aaa; font-size: 13px; margin: 0 0 12px; }
+  .spec-pane ol { margin: 0; padding-left: 22px; color: #ccc; font-size: 13px; line-height: 1.7; }
+  .spec-pane ol li { margin-bottom: 4px; }
+  .spec-pane code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
+  .spec-pane pre { background: #0d0d0d; border: 1px solid #2a2a2a; border-radius: 6px; padding: 14px 16px; overflow: auto; font-size: 12px; line-height: 1.55; color: #d4d4d4; margin: 0; max-height: 360px; font-family: 'SF Mono', Menlo, monospace; }
+  .spec-pane .copy-row { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 10px; }
+  .spec-pane .copy-row .hint { font-size: 12px; color: #777; line-height: 1.5; }
+  .spec-pane button.copy { background: #2a2a2a; color: #e0e0e0; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; flex-shrink: 0; transition: background .15s; }
+  .spec-pane button.copy:hover { background: #3a3a3a; }
+  .spec-pane button.copy.copied { background: #10b981; color: white; }
+  .limits-list { margin: 16px 0 0; padding-left: 22px; color: #ccc; font-size: 13px; line-height: 1.6; }
+  .limits-list li { margin-bottom: 12px; }
+  .limits-list li:last-child { margin-bottom: 0; }
+  .limits-list strong { color: #e5e5e5; font-weight: 600; }
+  .limits-list code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
+  .splash-footer { text-align: center; color: #555; font-size: 12px; padding-top: 24px; border-top: 1px solid #2a2a2a; }
+  .splash-footer kbd { background: #2a2a2a; color: #ccc; padding: 2px 7px; border-radius: 3px; font-size: 11px; font-family: 'SF Mono', Menlo, monospace; margin: 0 2px; }
+
+  /* Session-restore banner — injected by JS only when a prior session is found. */
+  .restore-banner { display: flex; align-items: center; justify-content: space-between; gap: 16px; background: #1f2937; border-left: 3px solid #2563eb; padding: 12px 16px; border-radius: 6px; margin-bottom: 24px; color: #e5e7eb; font-size: 13.5px; opacity: 0; animation: restoreFade .25s ease forwards; }
+  @keyframes restoreFade { to { opacity: 1; } }
+  .restore-banner .restore-text { flex: 1; }
+  .restore-banner .restore-actions { display: flex; align-items: center; gap: 14px; flex-shrink: 0; }
+  .restore-banner button.restore-primary { background: #2563eb; color: #fff; border: 0; padding: 6px 14px; border-radius: 4px; font-size: 13px; font-weight: 600; cursor: pointer; transition: background .15s; }
+  .restore-banner button.restore-primary:hover { background: #1d4ed8; }
+  .restore-banner button.restore-dismiss { background: none; border: 0; color: #9ca3af; font-size: 13px; cursor: pointer; padding: 0; text-decoration: underline; }
+  .restore-banner button.restore-dismiss:hover { color: #e5e7eb; }
+
+  #app { display: none; height: 100%; flex-direction: column; }
+  body.has-decks #app { display: flex; }
+
+  /* Mobile / touch-only banner — shown on the editor only, after touch detection in JS */
+  #mobile-warning { display: none; background: #422006; border-bottom: 1px solid #5a2d08; color: #fbbf24; padding: 9px 16px; font-size: 12.5px; text-align: center; flex-shrink: 0; line-height: 1.4; }
+  body.touch-only.has-decks #mobile-warning { display: block; }
+  /* On splash, show as a soft notice strip near the dropzone */
+  body.touch-only:not(.has-decks) .dropcard { border-color: #5a2d08; }
+  body.touch-only:not(.has-decks) .dropcard::after { content: 'Editing requires a desktop browser. Presenting works on any device.'; display: block; margin-top: 14px; font-size: 12px; color: #fbbf24; }
+
+  #topbar { padding: 8px 16px; background: #222; display: flex; align-items: center; gap: 12px; border-bottom: 1px solid #333; flex-shrink: 0; }
+  #topbar input { background: transparent; border: none; color: #e0e0e0; font-size: 16px; outline: none; flex: 1; }
+  #topbar button { background: #2563eb; color: white; border: none; padding: 6px 14px; border-radius: 4px; cursor: pointer; font-size: 14px; }
+  #topbar button:hover { background: #3b82f6; }
+  #topbar button.secondary { background: #374151; }
+  #topbar button.secondary:hover { background: #4b5563; }
+  .counter { color: #888; font-size: 13px; }
+
+  #main { flex: 1; display: flex; min-height: 0; }
+  #thumbs { width: 220px; background: #111; overflow-y: auto; padding: 8px; flex-shrink: 0; }
+  .thumb { position: relative; aspect-ratio: 16/9; margin-bottom: 8px; background: white; border-radius: 4px; overflow: hidden; cursor: pointer; border: 2px solid transparent; }
+  .thumb.current { border-color: #2563eb; box-shadow: 0 0 0 2px rgba(37,99,235,.3); }
+  .thumb iframe { width: 1280px; height: 720px; border: none; transform: scale(0.156); transform-origin: 0 0; pointer-events: none; }
+  .thumb .badges { position: absolute; top: 4px; left: 4px; display: flex; gap: 4px; }
+  .thumb .badge { background: rgba(0,0,0,.75); color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; font-weight: 600; line-height: 1.2; }
+  .thumb .num { position: absolute; bottom: 4px; right: 4px; background: rgba(0,0,0,.7); color: white; font-size: 10px; padding: 2px 6px; border-radius: 3px; }
+  .thumb.dragging { opacity: 0.4; }
+  .thumb.drop-before { border-top-color: #2563eb; border-top-width: 4px; }
+  .thumb.drop-after { border-bottom-color: #2563eb; border-bottom-width: 4px; }
+
+  #canvas-wrap { flex: 1; padding: 16px; display: flex; align-items: center; justify-content: center; min-width: 0; }
+  #canvas { width: 100%; max-width: 100%; aspect-ratio: 16/9; background: white; border-radius: 4px; box-shadow: 0 4px 24px rgba(0,0,0,.3); position: relative; overflow: hidden; }
+  #canvas iframe { width: 100%; height: 100%; border: none; border-radius: 4px; }
+
+  /* path overlay (audience-facing stepper) — barely-there, blooms on hover */
+  #path-overlay { display: none; position: absolute; z-index: 10; align-items: center; pointer-events: auto;
+                  background: rgba(0,0,0,.18); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+                  transition: background .25s; }
+  #path-overlay:hover { background: rgba(0,0,0,.62); }
+  #path-overlay.on { display: flex; }
+  #path-overlay[data-position="top"]    { top: 0;    left: 50%; transform: translateX(-50%); flex-direction: row;    padding: 2px 4px; border-radius: 0 0 5px 5px; }
+  #path-overlay[data-position="bottom"] { bottom: 0; left: 50%; transform: translateX(-50%); flex-direction: row;    padding: 2px 4px; border-radius: 5px 5px 0 0; }
+  #path-overlay[data-position="left"]   { left: 0;   top: 50%;  transform: translateY(-50%); flex-direction: column; padding: 4px 2px; border-radius: 0 5px 5px 0; }
+  #path-overlay[data-position="right"]  { right: 0;  top: 50%;  transform: translateY(-50%); flex-direction: column; padding: 4px 2px; border-radius: 5px 0 0 5px; }
+
+  .path-chip { display: flex; align-items: center; flex-direction: row; padding: 3px 4px; color: rgba(255,255,255,.55); font-size: 10px; font-family: system-ui, sans-serif; font-weight: 500; cursor: pointer; transition: color .2s; user-select: none; white-space: nowrap; letter-spacing: .3px; }
+  .path-chip:hover { color: white; }
+  .path-chip.past { color: rgba(255,255,255,.6); }
+  .path-chip.current { color: white; }
+
+  /* Label visibility is controlled by an explicit class on #path-overlay:
+     - default (minimal): only the .current chip's label shows
+     - .labels-all: every chip's label shows */
+  .path-label { max-width: 0; overflow: hidden; opacity: 0; margin-left: 0;
+                transition: max-width .28s ease, opacity .2s, margin-left .28s; }
+  .path-chip.current .path-label,
+  #path-overlay.labels-all .path-chip .path-label { max-width: 160px; opacity: 1; margin-left: 5px; }
+
+  .path-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .45; flex-shrink: 0; transition: background .2s, opacity .2s; }
+  .path-chip.past .path-dot { opacity: .6; }
+  .path-chip.current .path-dot { background: #60a5fa; opacity: 1; }
+
+  .path-line { background: rgba(255,255,255,.09); flex-shrink: 0; transition: background .2s; }
+  #path-overlay.labels-all .path-line { background: rgba(255,255,255,.2); }
+  #path-overlay[data-position="top"]    .path-line,
+  #path-overlay[data-position="bottom"] .path-line { width: 8px; height: 1px; }
+  #path-overlay[data-position="left"]   .path-line,
+  #path-overlay[data-position="right"]  .path-line { width: 1px; height: 8px; margin: 0 auto; }
+
+  body.presenting #topbar, body.presenting #thumbs { display: none; }
+  body.presenting #main { padding: 0; }
+  body.presenting #canvas-wrap { padding: 0; }
+  body.presenting #canvas { width: 100%; height: 100%; max-width: none; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+
+  /* color-coded source badges */
+  .src-0 { background: #ef4444 !important; }
+  .src-1 { background: #10b981 !important; }
+  .src-2 { background: #f59e0b !important; }
+  .src-3 { background: #8b5cf6 !important; }
+  .src-4 { background: #ec4899 !important; }
+  .src-5 { background: #06b6d4 !important; }
+
+  /* ingest-failure modal */
+  #ingest-modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px); display: none; align-items: center; justify-content: center; z-index: 9999; padding: 20px; }
+  #ingest-modal.open { display: flex; animation: ingest-modal-fade .18s ease-out; }
+  #ingest-modal .ingest-card { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 10px; max-width: 520px; width: 100%; padding: 24px; box-shadow: 0 10px 40px rgba(0,0,0,.5); animation: ingest-modal-rise .22s ease-out; }
+  #ingest-modal h2 { margin: 0 0 12px; font-size: 18px; font-weight: 600; color: #f5f5f5; }
+  #ingest-modal .ingest-hint { font-size: 14px; color: #ccc; line-height: 1.55; margin: 0 0 14px; }
+  #ingest-modal .ingest-body { font-size: 14px; color: #ccc; line-height: 1.55; margin: 0 0 18px; }
+  #ingest-modal code { background: #0d0d0d; padding: 1px 6px; border-radius: 3px; font-size: 12px; color: #fbbf24; font-family: 'SF Mono', Menlo, monospace; }
+  #ingest-modal .ingest-actions { display: flex; gap: 10px; justify-content: flex-end; flex-wrap: wrap; }
+  #ingest-modal button { background: #2563eb; color: white; border: none; padding: 10px 22px; border-radius: 6px; cursor: pointer; font-size: 14px; font-weight: 500; transition: background .15s; }
+  #ingest-modal button:hover { background: #3b82f6; }
+  #ingest-modal button.secondary { background: #2a2a2a; color: #e0e0e0; }
+  #ingest-modal button.secondary:hover { background: #3a3a3a; }
+  #ingest-modal .ingest-spec-link { display: inline-block; margin-top: 12px; font-size: 12px; color: #888; text-decoration: underline; cursor: pointer; background: none; border: none; padding: 0; }
+  #ingest-modal .ingest-spec-link:hover { color: #ccc; }
+  @keyframes ingest-modal-fade { from { opacity: 0; } to { opacity: 1; } }
+  @keyframes ingest-modal-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
+</style>
+</head>
+<body>
+
+<div id="splash">
+  <div class="splash-inner">
+    <header class="splash-header">
+      <div class="splash-logo"><div class="mark"></div><span>Mixdeck</span></div>
+      <a href="#" id="github-link" target="_blank" rel="noopener">GitHub &nearr;</a>
+    </header>
+
+    <section class="splash-hero">
+      <h1>Combine PowerPoint and HTML slides<br>into one presentation</h1>
+      <p>Mix slides from multiple decks — PPTX or HTML — onto a single timeline. Reorder visually, present, and export as a self-contained HTML file. Runs entirely in your browser. No upload, no signup.</p>
+    </section>
+
+    <section class="dropcard" id="dropcard">
+      <div class="drop-title">Drop <code>.html</code> or <code>.pptx</code> files anywhere — or</div>
+      <div class="drop-actions">
+        <button id="choose-btn">Choose files</button>
+        <button class="secondary" id="samples-btn">Try with samples</button>
+      </div>
+    </section>
+
+    <section class="features">
+      <div class="feature">
+        <div class="icon">⧉</div>
+        <h3>Mix HTML and PowerPoint</h3>
+        <p>Drag in <code>.html</code> or <code>.pptx</code> files. Both land on one timeline you can reorder freely.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">▸</div>
+        <h3>Native HTML playback</h3>
+        <p>HTML decks load with their original CSS and JS intact — animations replay natively when slides run in their source order. PowerPoint slides come through as static layouts.</p>
+      </div>
+      <div class="feature">
+        <div class="icon">⇣</div>
+        <h3>Export as one file</h3>
+        <p>Download a single self-contained HTML file. Recipients open it like any other web page — no app needed.</p>
+      </div>
+    </section>
+
+    <section class="spec open" id="spec">
+      <div class="spec-head" id="spec-head">
+        <h3>Make your HTML deck Mixdeck-ready</h3>
+        <span class="caret">▶</span>
+      </div>
+      <div class="spec-body">
+        <div class="spec-tabs">
+          <button data-tab="spec" class="active">Format spec</button>
+          <button data-tab="prompt">AI prompt</button>
+          <button data-tab="template">Starter template</button>
+        </div>
+
+        <div class="spec-pane active" data-pane="spec">
+          <p class="intro">PowerPoint files import automatically — no setup needed. HTML decks must follow this format:</p>
+          <ol>
+            <li>Each slide is a top-level <code>&lt;section class="slide"&gt;</code> directly inside <code>&lt;body&gt;</code>. Don't nest; don't use <code>&lt;div&gt;</code>.</li>
+            <li><code>html</code> and <code>body</code> fill the viewport. Each <code>section.slide</code> is <code>position: absolute</code> + <code>inset: 0</code>, hidden by default, shown when it has <code>.active</code>.</li>
+            <li>Recommended (not required): scale the deck with the viewport by setting <code>html { font-size: min(1.25vw, 2.22vh); }</code> and sizing everything else in <code>rem</code>. Non-scaling decks still work, but fixed-px sizes look small at fullscreen on a 4K display.</li>
+            <li>Include the navigation script (see <strong>Starter template</strong>). Mixdeck only controls which file loads and which slide to start on (via <code>window.STARTING_SLIDE</code>) and forwards arrow-key presses into the iframe. The deck's own script is what adds the <code>.active</code> class to make a slide visible, and what responds to forwarded keys so each slide's animation replays natively when navigating inside the deck.</li>
+            <li>Optional: add <code>data-name="Chapter"</code> to a slide and it appears as a label in the audience-facing path overlay.</li>
+            <li>Design at 16:9. Animations on <code>section.slide.active</code> play and replay cleanly.</li>
+          </ol>
+        </div>
+
+        <div class="spec-pane" data-pane="prompt">
+          <div class="copy-row">
+            <span class="hint"><strong>Already have a deck?</strong> Paste this into Claude, ChatGPT, or any LLM, then paste your existing deck content (HTML source, exported file, or outline) right after. The model will adapt it to Mixdeck's format while preserving your design.</span>
+            <button class="copy" id="copy-prompt">Copy prompt</button>
+          </div>
+          <pre id="prompt-text"></pre>
+        </div>
+
+        <div class="spec-pane" data-pane="template">
+          <div class="copy-row">
+            <span class="hint"><strong>Starting from scratch?</strong> Save this as <code>mydeck.html</code> and edit your content. Inline comments explain the Mixdeck contract — any AI assistant that keeps editing this file will know which parts must not be removed.</span>
+            <button class="copy" id="copy-template">Copy template</button>
+          </div>
+          <pre id="template-text"></pre>
+        </div>
+      </div>
+    </section>
+
+    <section class="spec" id="limits">
+      <div class="spec-head">
+        <h3>Known limitations</h3>
+        <span class="caret">▶</span>
+      </div>
+      <div class="spec-body">
+        <ul class="limits-list">
+          <li><strong>PPTX animations and embedded media don't transfer.</strong> Mixdeck converts PowerPoint slides to static HTML on import. Layout, text, and images come through; slide transitions, builds, embedded video/audio, and most custom effects do not.</li>
+          <li><strong>PowerPoint conversion is approximate.</strong> Fonts may substitute and some complex shapes or chart effects render imperfectly. Always preview before presenting.</li>
+          <li><strong>PowerPoint conversion uses a small bundled JS library (~200&nbsp;KB),</strong> loaded the first time you import a <code>.pptx</code>. Files themselves are never uploaded.</li>
+          <li><strong>HTML decks must match the format spec.</strong> Reveal.js, Slides.com exports, Google Slides HTML, and similar formats won't work as-is. The <strong>AI prompt</strong> above can convert most decks in one shot.</li>
+          <li><strong>No undo, no autosave.</strong> Page reload clears the order. Use <strong>Export</strong> before closing the tab to keep your work as a single HTML file.</li>
+          <li><strong>Reordering can break deck-internal JS state.</strong> When slides are pulled out of their original sequence, Mixdeck loads them one at a time. JS that depends on multi-slide state in the source deck (counters, state machines) only runs correctly when a full original block is in your timeline.</li>
+          <li><strong>Editing is mouse-only.</strong> Drag-to-import and drag-to-reorder don't work on touch devices. Presenting and keyboard navigation work anywhere.</li>
+        </ul>
+      </div>
+    </section>
+
+    <footer class="splash-footer">
+      <kbd>←</kbd> <kbd>→</kbd> <kbd>↑</kbd> <kbd>↓</kbd> navigate &middot; <kbd>F</kbd> fullscreen &middot; drag thumbnails to reorder
+    </footer>
+  </div>
+</div>
+
+<div id="app">
+  <div id="mobile-warning">Editing requires a desktop browser. Drag-to-reorder and drag-to-import don't work on touch — presenting and keyboard navigation do.</div>
+  <div id="topbar">
+    <input type="text" id="deck-name" value="Untitled deck">
+    <span class="counter" id="counter">0/0</span>
+    <button class="secondary" id="add-btn">+ Add file</button>
+    <button class="secondary" id="path-btn">Path: off</button>
+    <button class="secondary" id="labels-btn" style="display:none">Labels: minimal</button>
+    <button class="secondary" id="export-btn">Export</button>
+    <button id="present-btn">▶ Present</button>
+  </div>
+  <div id="main">
+    <div id="thumbs"></div>
+    <div id="canvas-wrap"><div id="canvas"><iframe id="canvas-iframe"></iframe><div id="path-overlay" data-position="top"></div></div></div>
+  </div>
+</div>
+
+<input type="file" id="file-input" multiple accept=".html,.htm,.pptx" hidden>
+
+<div id="ingest-modal" role="dialog" aria-modal="true" aria-labelledby="ingest-modal-title">
+  <div class="ingest-card">
+    <h2 id="ingest-modal-title">Can't import</h2>
+    <p class="ingest-hint" id="ingest-modal-hint"></p>
+    <p class="ingest-body">Mixdeck needs each slide as a top-level <code>&lt;section class="slide"&gt;</code> inside <code>&lt;body&gt;</code>. The fastest fix is to paste this prompt into Claude or ChatGPT along with your file content &mdash; it will adapt your deck for you.</p>
+    <div class="ingest-actions">
+      <button class="secondary" id="ingest-modal-close">Close</button>
+      <button id="ingest-modal-copy">Copy AI prompt</button>
+    </div>
+    <button class="ingest-spec-link" id="ingest-modal-spec">See full format spec</button>
+  </div>
+</div>
+
+<script>
+// =========================================================================
+// Mixdeck source map (jump targets below):
+//   ingestion           - turn dropped files into source records
+//   pptx ingestion      - lazy-load converter, render as synthetic HTML deck
+//   splash interactions - pre-load landing page, AI prompt, samples
+//   block detection     - find contiguous native/sliced runs in the manifest
+//   rendering           - thumbs, canvas, path overlay
+//   navigation          - keyboard, advance, forwardKey to iframe
+//   export              - bundle current state as self-contained player HTML
+//   bundled sample decks - Maya / Jordan HTML for "Try with samples"
+// =========================================================================
+
+const PATH_CYCLE = ['off', 'top', 'bottom', 'right', 'left'];
+const LABEL_CYCLE = ['minimal', 'all'];
+
+const state = {
+  sources: [],   // { id, name, fullHTML, headHTML, sectionsHTML[], sectionNames[], count }
+  manifest: [],  // [{ sourceId, slideIndex }]
+  current: 0,
+  blocks: [],
+  nextSrcId: 0,
+  pathMode: 'off',   // off | top | bottom | right | left
+  labelMode: 'minimal', // minimal | all — only meaningful when pathMode !== 'off'
+};
+
+const $ = (id) => document.getElementById(id);
+const els = {
+  body: document.body,
+  thumbs: $('thumbs'),
+  canvasIframe: $('canvas-iframe'),
+  counter: $('counter'),
+  fileInput: $('file-input'),
+  pathOverlay: $('path-overlay'),
+  pathBtn: $('path-btn'),
+  labelsBtn: $('labels-btn'),
+};
+
+// ---------- session autosave ----------
+// sessionStorage (per-tab, not persistent across close) snapshots the editor
+// state so an accidental refresh doesn't wipe a user's work. We include the
+// full source HTML because without it the manifest references nothing — the
+// whole point is recovery without re-dropping files.
+
+const SESSION_KEY = 'mixdeck:session';
+const SESSION_VERSION = 1;
+let sessionSaveDisabled = false; // flips true after a quota failure; reset on reload
+let sessionSaveTimer = null;
+
+function saveSession() {
+  if (sessionSaveDisabled) return;
+  clearTimeout(sessionSaveTimer);
+  sessionSaveTimer = setTimeout(() => {
+    try {
+      const payload = {
+        v: SESSION_VERSION,
+        sources: state.sources,
+        manifest: state.manifest,
+        pathMode: state.pathMode,
+        labelMode: state.labelMode,
+        nextSrcId: state.nextSrcId,
+        deckName: ($('deck-name') && $('deck-name').value) || '',
+      };
+      sessionStorage.setItem(SESSION_KEY, JSON.stringify(payload));
+    } catch (err) {
+      sessionSaveDisabled = true;
+      console.warn('Mixdeck: session autosave disabled (storage quota or unavailable):', err);
+    }
+  }, 400);
+}
+
+function loadSession() {
+  let raw;
+  try { raw = sessionStorage.getItem(SESSION_KEY); } catch (e) { return null; }
+  if (!raw) return null;
+  try {
+    const payload = JSON.parse(raw);
+    if (!payload || payload.v !== SESSION_VERSION) return null;
+    if (!Array.isArray(payload.sources) || payload.sources.length === 0) return null;
+    return payload;
+  } catch (e) {
+    return null;
+  }
+}
+
+function restoreSession(payload) {
+  state.sources = payload.sources || [];
+  state.manifest = payload.manifest || [];
+  state.pathMode = payload.pathMode || 'off';
+  state.labelMode = payload.labelMode === 'all' ? 'all' : 'minimal';
+  state.nextSrcId = typeof payload.nextSrcId === 'number'
+    ? payload.nextSrcId
+    : (state.sources.reduce((m, s) => Math.max(m, s.id + 1), 0));
+  state.current = 0;
+  const nameInput = $('deck-name');
+  if (nameInput && typeof payload.deckName === 'string' && payload.deckName) {
+    nameInput.value = payload.deckName;
+  }
+  if (els.pathBtn) els.pathBtn.textContent = `Path: ${state.pathMode}`;
+  if (els.labelsBtn) { els.labelsBtn.textContent = `Labels: ${state.labelMode}`; els.labelsBtn.style.display = state.pathMode === 'off' ? 'none' : ''; }
+  if (state.manifest.length > 0) els.body.classList.add('has-decks');
+  recompute();
+}
+
+// ---------- ingestion ----------
+
+function detectIngestFailureHint(doc, html) {
+  // Reveal.js: nested sections inside .reveal/.slides
+  if (doc.querySelector('.reveal .slides section') || doc.querySelector('.reveal')) {
+    return 'Looks like a Reveal.js deck. Slides need to be top-level <code>&lt;section class="slide"&gt;</code> in <code>&lt;body&gt;</code>, not nested inside <code>.slides</code>.';
+  }
+  // <div class="slide"> instead of <section>
+  if (doc.querySelector('div.slide')) {
+    return 'Slides are <code>&lt;div class="slide"&gt;</code> &mdash; they need to be <code>&lt;section class="slide"&gt;</code>.';
+  }
+  // Multiple <section> blocks but none use class="slide"
+  const allSections = doc.querySelectorAll('section');
+  if (allSections.length > 1) {
+    return 'Has multiple <code>&lt;section&gt;</code> blocks but none use <code>class="slide"</code>.';
+  }
+  // Google Slides export signatures
+  if (/googleHostedHtml|swiffy|google\.com\/presentation/i.test(html)) {
+    return 'Looks like a Google Slides export &mdash; these typically need to be rewritten to the Mixdeck format.';
+  }
+  return 'Couldn’t find any <code>&lt;section class="slide"&gt;</code> blocks in <code>&lt;body&gt;</code>.';
+}
+
+const _ingestErrorQueue = [];
+let _ingestErrorShowing = false;
+function queueIngestErrorModal(name, hint) {
+  _ingestErrorQueue.push({ name, hint });
+  if (!_ingestErrorShowing) showNextIngestError();
+}
+function showNextIngestError() {
+  const next = _ingestErrorQueue.shift();
+  if (!next) { _ingestErrorShowing = false; return; }
+  _ingestErrorShowing = true;
+  const modal = document.getElementById('ingest-modal');
+  document.getElementById('ingest-modal-title').textContent = `Can't import ${next.name}`;
+  document.getElementById('ingest-modal-hint').innerHTML = next.hint;
+  const copyBtn = document.getElementById('ingest-modal-copy');
+  copyBtn.textContent = 'Copy AI prompt';
+  copyBtn.classList.remove('copied');
+  modal.classList.add('open');
+}
+function closeIngestErrorModal() {
+  document.getElementById('ingest-modal').classList.remove('open');
+  // small delay so animation doesn't reset visibly mid-queue
+  setTimeout(showNextIngestError, 120);
+}
+document.getElementById('ingest-modal-close').onclick = closeIngestErrorModal;
+document.getElementById('ingest-modal-copy').onclick = (e) => copyToClipboard(AI_PROMPT, e.currentTarget);
+document.getElementById('ingest-modal-spec').onclick = () => {
+  const spec = document.getElementById('spec');
+  if (spec) {
+    spec.classList.add('open');
+    spec.scrollIntoView({ behavior: 'smooth' });
+  }
+  closeIngestErrorModal();
+};
+document.getElementById('ingest-modal').addEventListener('click', (e) => {
+  if (e.target.id === 'ingest-modal') closeIngestErrorModal();
+});
+document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && document.getElementById('ingest-modal').classList.contains('open')) closeIngestErrorModal();
+});
+
+function ingestFile(name, html) {
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const sections = [...doc.querySelectorAll('body > section.slide')];
+  if (sections.length === 0) {
+    queueIngestErrorModal(name, detectIngestFailureHint(doc, html));
+    return;
+  }
+  // top-level body <script>s = the deck's own navigation/animation logic.
+  // We include these in slice-mode renders so a single section can still activate itself.
+  const bodyScripts = [...doc.body.querySelectorAll(':scope > script')].map(s => s.outerHTML).join('\n');
+  const src = {
+    id: state.nextSrcId++,
+    name,
+    fullHTML: html,
+    headHTML: doc.head ? doc.head.innerHTML : '',
+    bodyScripts,
+    sectionsHTML: sections.map(s => s.outerHTML),
+    sectionNames: sections.map(s => s.getAttribute('data-name') || null),
+    count: sections.length,
+  };
+  state.sources.push(src);
+  for (let i = 0; i < src.count; i++) {
+    state.manifest.push({ sourceId: src.id, slideIndex: i });
+  }
+  els.body.classList.add('has-decks');
+  recompute();
+}
+
+async function readFiles(files) {
+  for (const f of files) {
+    if (/\.html?$/i.test(f.name)) {
+      ingestFile(f.name, await f.text());
+    } else if (/\.pptx$/i.test(f.name)) {
+      await ingestPptx(f);
+    }
+    // Other extensions silently ignored.
+  }
+}
+
+// ---------- pptx ingestion ----------
+// Strategy: lazy-load @jvmr/pptx-to-html (bundled locally at ./lib/pptx.js, with a
+// jsdelivr CDN fallback for standalone use), use it to render each slide as positioned
+// HTML, then wrap the slides as a synthetic deck-format-v1 HTML doc and feed it back
+// into ingestFile(). Downstream code (block detection, slicing, export) stays untouched
+// — pptx looks like any other HTML deck once converted.
+
+const PPTX_ENGINE_LOCAL_URL = './lib/pptx.js';
+const PPTX_ENGINE_CDN_URL = 'https://cdn.jsdelivr.net/npm/@jvmr/pptx-to-html@1.0.1/+esm';
+let pptxEnginePromise = null;
+function loadPptxEngine() {
+  if (!pptxEnginePromise) {
+    pptxEnginePromise = import(PPTX_ENGINE_LOCAL_URL)
+      .catch(localErr => {
+        console.warn('Local pptx engine load failed, falling back to CDN:', localErr);
+        return import(PPTX_ENGINE_CDN_URL);
+      })
+      .then(m => m.pptxToHtml)
+      .catch(err => {
+        pptxEnginePromise = null;
+        throw err;
+      });
+  }
+  return pptxEnginePromise;
+}
+
+async function ingestPptx(file) {
+  const prevCounter = els.counter.textContent;
+  els.counter.textContent = `converting ${file.name}…`;
+  try {
+    const pptxToHtml = await loadPptxEngine();
+    const buf = await file.arrayBuffer();
+    // Render at the library's natural-fit size. We override the library's transform with
+    // our own CSS so it scales to fit the iframe viewport (preserving aspect ratio).
+    const slidesHtml = await pptxToHtml(buf, { width: 1280, height: 720, scaleToFit: true, letterbox: true });
+    if (!slidesHtml || slidesHtml.length === 0) throw new Error('No slides rendered');
+    const synthetic = pptxToSyntheticDeck(file.name, slidesHtml);
+    ingestFile(file.name, synthetic);
+  } catch (err) {
+    console.error('PPTX import failed:', err);
+    alert(`Could not import ${file.name}.\n\n${err && err.message ? err.message : err}\n\nIf this is the first .pptx you've imported, make sure ./lib/pptx.js is deployed alongside the app (loaded locally first, jsdelivr CDN as fallback).`);
+  } finally {
+    if (els.counter.textContent.startsWith('converting')) els.counter.textContent = prevCounter;
+  }
+}
+
+function pptxToSyntheticDeck(name, slidesHtml) {
+  // The library wraps each slide as:
+  //   <div class="slide-container" ...width:Wpx; height:Hpx...>
+  //     <div class="slide" ...width:Rpx; height:Npx; transform: scale(t)...>...content...</div>
+  //   </div>
+  // R x N are the slide's NATIVE coord space (960x540 for a 16:9 PowerPoint, 720x540 for 4:3, etc).
+  // Children inside .slide are positioned absolutely in those native coords.
+  // We override the library's transform on .slide so it scales to fit the iframe viewport directly
+  // (preserving native aspect ratio). No middle scaler, no bounding-box math.
+  const slideMatch = slidesHtml[0] && slidesHtml[0].match(/class=["']slide["'][^>]*?width:\s*([\d.]+)px[^>]*?height:\s*([\d.]+)px/i);
+  const nativeW = slideMatch ? parseFloat(slideMatch[1]) : 960;
+  const nativeH = slideMatch ? parseFloat(slideMatch[2]) : 540;
+  const sections = slidesHtml.map((html, i) =>
+    `<section class="slide" data-pptx-idx="${i + 1}">${html}</section>`
+  ).join('\n');
+  return `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"><title>${escapeAttr(name)}</title>
+<style>
+  html, body { margin: 0; height: 100vh; overflow: hidden; background: #1a1a1a; font-family: system-ui, sans-serif; }
+  section.slide { display: none; position: absolute; inset: 0; }
+  section.slide.active { display: block; animation: pptxIn 0.25s ease; }
+  @keyframes pptxIn { from { opacity: 0; } to { opacity: 1; } }
+  /* Stretch the library's slide-container to fill the iframe, drop its internal bg. */
+  section.slide > .slide-container {
+    position: relative !important;
+    width: 100% !important;
+    height: 100% !important;
+    background: transparent !important;
+    overflow: hidden !important;
+  }
+  /* Scale the slide's native ${nativeW}x${nativeH} coord space to fit the iframe viewport,
+     preserving aspect ratio. NOTE: the divisor MUST carry a unit (px) so calc() resolves to
+     a unitless number that scale() accepts. 100vw/960 (length/number) gives a length, and
+     scale() would silently ignore that. 100vw/960px (length/length) gives a number. */
+  section.slide > .slide-container > .slide {
+    position: absolute !important;
+    left: 50% !important;
+    top: 50% !important;
+    transform-origin: center center !important;
+    transform: translate(-50%, -50%) scale(min(calc(100vw / ${nativeW}px), calc(100vh / ${nativeH}px))) !important;
+  }
+</style>
+</head><body>
+${sections}
+<script>
+  const slides = [...document.querySelectorAll('section.slide')];
+  let idx = (typeof window.STARTING_SLIDE === 'number' ? window.STARTING_SLIDE : 0);
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') show(idx - 1);
+  });
+  show(idx);
+<\/script>
+</body></html>`;
+}
+
+function escapeAttr(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]); }
+
+window.addEventListener('dragover', e => {
+  if (e.dataTransfer && [...e.dataTransfer.types].includes('Files')) {
+    e.preventDefault();
+    els.body.classList.add('dragging');
+  }
+});
+window.addEventListener('dragleave', e => {
+  if (e.relatedTarget === null) els.body.classList.remove('dragging');
+});
+window.addEventListener('drop', async e => {
+  if (!e.dataTransfer || !e.dataTransfer.files.length) return;
+  e.preventDefault();
+  els.body.classList.remove('dragging');
+  await readFiles(e.dataTransfer.files);
+});
+
+$('add-btn').onclick = () => els.fileInput.click();
+els.fileInput.onchange = e => readFiles(e.target.files);
+
+// Touch-only device detection. We treat "no hover-capable pointer + touch events"
+// as a strong signal that drag/drop reordering is unusable. Show a banner on the
+// editor and a notice on the splash; presenting + keyboard nav still work fine.
+(() => {
+  const hasTouch = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
+  const hasHover = window.matchMedia && window.matchMedia('(hover: hover)').matches;
+  if (hasTouch && !hasHover) els.body.classList.add('touch-only');
+})();
+
+// ---------- splash interactions ----------
+
+const AI_PROMPT = `You are converting an existing slide deck into a Mixdeck-compatible HTML file.
+
+Mixdeck (https://mixdeck.app) is a tool that combines slides from multiple decks into one presentation. I will paste my existing deck below (HTML source, exported file content, a text outline, or a description). Convert it into ONE self-contained HTML file that follows the rules below exactly.
+
+GOAL — preserve my deck's visual style, content, and slide structure as faithfully as possible while making it work in Mixdeck. Do not redesign; adapt.
+
+REQUIRED FORMAT:
+
+1. ONE self-contained HTML file. All CSS in a <style> tag in <head>. All JS in <script> tags. Inline everything. CDN URLs for fonts or libraries are fine; no local file references.
+
+2. Each slide must be a TOP-LEVEL <section class="slide"> directly inside <body>. Do NOT nest sections. Do NOT use <div class="slide">. If my source uses divs, paragraphs, page breaks, or any other slide-delimiter, convert each into a <section class="slide">.
+
+3. <html> and <body> fill the viewport:
+     html, body { margin: 0; height: 100vh; overflow: hidden; }
+   Each section.slide is positioned absolute, inset: 0, display: none by default, and shown when the .active class is added.
+
+3a. Use viewport-relative root font-sizing so the deck scales at any display size:
+     html { font-size: min(1.25vw, 2.22vh); }
+    Then size everything else in rem (1rem = 16px at 1280×720, scales up at larger viewports). Convert any px values from the source by dividing by 16. Keep stroke-widths and font-sizes INSIDE SVGs in px (they live in SVG user-space and scale with the SVG's outer width/height — which should be in rem). This is what makes the deck look right both as a small thumbnail and at fullscreen on a 4K screen.
+
+4. Include this navigation script verbatim at the end of <body>:
+
+   <script>
+     const slides = [...document.querySelectorAll('section.slide')];
+     let idx = (typeof window.STARTING_SLIDE === 'number' ? window.STARTING_SLIDE : 0);
+     function show(i) {
+       idx = Math.max(0, Math.min(slides.length - 1, i));
+       slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+     }
+     document.addEventListener('keydown', e => {
+       if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+       else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') show(idx - 1);
+     });
+     show(idx);
+   <\/script>
+
+   This script is REQUIRED. Mixdeck only controls which file is loaded and which slide it starts on (via window.STARTING_SLIDE), and forwards arrow-key presses into the iframe. The deck's own script is what (a) toggles .active so the starting slide is visible, and (b) responds to forwarded keys so each slide's CSS animation replays natively. Without this script, slides load but stay hidden.
+
+5. Add data-name="Chapter Title" to slides that mark a logical section boundary (intro, agenda, named topic, conclusion). These appear as labels in Mixdeck's audience-facing path overlay. Don't add data-name to every slide — only meaningful chapter markers.
+
+6. Design at 16:9. Preserve the original colors, typography, layout, and per-slide animations as closely as possible. If the source uses a font you can't access, pick a close fallback and include it in the font stack.
+
+THINGS THAT WON'T CARRY OVER FROM SOURCE FORMATS — skip cleanly and continue:
+- PowerPoint / Keynote animations, transitions, builds — each slide becomes a static layout.
+- Embedded video and audio — replace with a still image and a short note like "[video: filename]".
+- Speaker notes — omit unless I explicitly ask for them.
+- Slide masters and themes — re-implement the visual style as CSS in <style>.
+- Anything that requires external file paths I don't paste — leave a "[source referenced X — please replace]" placeholder and continue.
+
+OUTPUT: only the complete HTML file, no commentary before or after.
+
+My existing deck is below:
+---
+[PASTE YOUR DECK CONTENT HERE]`;
+
+const STARTER_TEMPLATE = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>My deck</title>
+<!--
+  ===========================================================================
+  MIXDECK-COMPATIBLE DECK
+  ===========================================================================
+  This file follows the Mixdeck contract. If you (or an AI assistant) keep
+  editing this deck, the following must NOT be removed or changed — anything
+  else (styles, colors, fonts, content, additional CSS or JS) is yours.
+
+  CONTRACT (don't break these):
+  1. Every slide is a top-level <section class="slide"> directly inside <body>.
+     Don't nest sections; don't use <div class="slide">.
+  2. Slides are hidden by default (display: none) and shown via the .active
+     class. Keep this rule in the CSS.
+  3. The <script> at the bottom of <body> is REQUIRED. It reads
+     window.STARTING_SLIDE (set by Mixdeck before load) and listens for
+     arrow keys (forwarded by Mixdeck from the outer page). Removing it
+     means slides load but stay hidden.
+  4. data-name="..." on a section is optional — it labels the slide in
+     Mixdeck's audience-facing path overlay. Use it for chapter boundaries.
+
+  Designed for 16:9. Spec & AI conversion prompt at https://mixdeck.app
+  ===========================================================================
+-->
+<style>
+  /* Root font-size scales with viewport — maintains 16:9 design proportions at any display size. */
+  html { font-size: min(1.25vw, 2.22vh); }
+
+  /* Fill the viewport. Customize freely below this line. */
+  html, body { margin: 0; height: 100vh; overflow: hidden; font-family: system-ui, sans-serif; background: #111; color: white; }
+
+  /* MIXDECK CONTRACT — keep these two rules. Animation/styling inside is yours. */
+  section.slide       { position: absolute; inset: 0; display: none; padding: 3.75rem 5rem; flex-direction: column; justify-content: center; box-sizing: border-box; }
+  section.slide.active { display: flex; animation: slideIn .4s ease; }
+
+  /* Customize: entrance animation, typography, layout. Size things in rem so they scale at fullscreen. */
+  @keyframes slideIn { from { opacity: 0; transform: translateY(0.625rem); } to { opacity: 1; transform: none; } }
+  h1 { font-size: 4rem; margin: 0 0 1.25rem; }
+  p  { font-size: 1.75rem; opacity: .85; }
+</style>
+</head>
+<body>
+
+<!-- Each slide is a top-level <section class="slide">.
+     Add data-name="..." on slides that should appear as chapter labels in Mixdeck's path overlay. -->
+<section class="slide" data-name="Hello">
+  <h1>Hello, Mixdeck</h1>
+  <p>This is a minimal compliant deck.</p>
+</section>
+
+<section class="slide" data-name="Next">
+  <h1>Next slide</h1>
+  <p>Use ← → to navigate.</p>
+</section>
+
+<!-- REQUIRED MIXDECK NAVIGATION SCRIPT — do not remove.
+     Mixdeck sets window.STARTING_SLIDE before loading this deck in an iframe
+     and forwards arrow-key presses into it. This script reads STARTING_SLIDE,
+     toggles the .active class so the right slide is visible, and replays
+     in-deck CSS animations when the user navigates. -->
+<script>
+  const slides = [...document.querySelectorAll('section.slide')];
+  let idx = (typeof window.STARTING_SLIDE === 'number' ? window.STARTING_SLIDE : 0);
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') show(idx - 1);
+  });
+  show(idx);
+<\/script>
+</body>
+</html>`;
+
+$('choose-btn').onclick = () => els.fileInput.click();
+$('samples-btn').onclick = () => {
+  ingestFile('maya.html', SAMPLE_MAYA);
+  ingestFile('jordan.html', SAMPLE_JORDAN);
+};
+
+// Session-restore prompt: if sessionStorage has a valid payload from this tab,
+// offer a banner above the splash hero to rehydrate it. Built dynamically so
+// the static markup stays clean for the common (no-prior-session) path.
+(() => {
+  const payload = loadSession();
+  if (!payload) return;
+  const deckCount = payload.sources.length;
+  const slideCount = (payload.manifest || []).length;
+  const splashInner = document.querySelector('.splash-inner');
+  if (!splashInner) return;
+  const banner = document.createElement('div');
+  banner.className = 'restore-banner';
+  const text = document.createElement('div');
+  text.className = 'restore-text';
+  text.textContent = `Restore your last session? (${deckCount} deck${deckCount === 1 ? '' : 's'} · ${slideCount} slide${slideCount === 1 ? '' : 's'})`;
+  const actions = document.createElement('div');
+  actions.className = 'restore-actions';
+  const restoreBtn = document.createElement('button');
+  restoreBtn.className = 'restore-primary';
+  restoreBtn.textContent = 'Restore';
+  restoreBtn.onclick = () => {
+    restoreSession(payload);
+    banner.remove();
+  };
+  const dismissBtn = document.createElement('button');
+  dismissBtn.className = 'restore-dismiss';
+  dismissBtn.textContent = 'Dismiss';
+  dismissBtn.onclick = () => {
+    try { sessionStorage.removeItem(SESSION_KEY); } catch (e) {}
+    banner.remove();
+  };
+  actions.appendChild(restoreBtn);
+  actions.appendChild(dismissBtn);
+  banner.appendChild(text);
+  banner.appendChild(actions);
+  splashInner.insertBefore(banner, splashInner.firstChild);
+})();
+
+document.querySelectorAll('.spec').forEach(s => {
+  s.querySelector('.spec-head').onclick = () => s.classList.toggle('open');
+});
+
+document.querySelectorAll('.spec-tabs button').forEach(btn => {
+  btn.onclick = () => {
+    document.querySelectorAll('.spec-tabs button').forEach(b => b.classList.toggle('active', b === btn));
+    document.querySelectorAll('.spec-pane').forEach(p => p.classList.toggle('active', p.dataset.pane === btn.dataset.tab));
+  };
+});
+
+$('prompt-text').textContent = AI_PROMPT;
+$('template-text').textContent = STARTER_TEMPLATE;
+
+function copyToClipboard(text, btn) {
+  const done = () => {
+    const orig = btn.textContent;
+    btn.textContent = 'Copied!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = orig; btn.classList.remove('copied'); }, 1500);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(text).then(done).catch(() => fallbackCopy(text, done));
+  } else {
+    fallbackCopy(text, done);
+  }
+}
+function fallbackCopy(text, done) {
+  const ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); done(); } catch (e) {}
+  document.body.removeChild(ta);
+}
+$('copy-prompt').onclick = (e) => copyToClipboard(AI_PROMPT, e.currentTarget);
+$('copy-template').onclick = (e) => copyToClipboard(STARTER_TEMPLATE, e.currentTarget);
+
+// ---------- block detection ----------
+
+function computeBlocks() {
+  const blocks = [];
+  let i = 0;
+  while (i < state.manifest.length) {
+    const start = i;
+    const srcId = state.manifest[i].sourceId;
+    let expected = state.manifest[i].slideIndex;
+    while (i < state.manifest.length
+        && state.manifest[i].sourceId === srcId
+        && state.manifest[i].slideIndex === expected) {
+      i++;
+      expected++;
+    }
+    const src = srcOf(srcId);
+    const startIdx = state.manifest[start].slideIndex;
+    const isFull = startIdx === 0 && expected === src.count;
+    blocks.push({ start, end: i, sourceId: srcId, mode: isFull ? 'native' : 'sliced' });
+  }
+  return blocks;
+}
+
+function blockOf(idx) { return state.blocks.find(b => idx >= b.start && idx < b.end); }
+function srcOf(id) { return state.sources.find(s => s.id === id); }
+
+// ---------- rendering ----------
+
+function recompute() {
+  state.blocks = computeBlocks();
+  if (state.current >= state.manifest.length) state.current = state.manifest.length - 1;
+  if (state.current < 0) state.current = 0;
+  renderThumbs();
+  renderCanvas(true);
+  renderPath();
+  updateCounter();
+  saveSession();
+}
+
+function renderPath() {
+  const o = els.pathOverlay;
+  o.innerHTML = '';
+  if (state.pathMode === 'off' || state.manifest.length === 0) {
+    o.classList.remove('on');
+    return;
+  }
+  const named = [];
+  state.manifest.forEach((slide, idx) => {
+    const src = srcOf(slide.sourceId);
+    const name = src.sectionNames[slide.slideIndex];
+    if (!name) return;
+    // Collapse consecutive same-name chapters into one — clicking the chip jumps to the first instance.
+    if (named.length > 0 && named[named.length - 1].name === name) return;
+    named.push({ idx, name });
+  });
+  if (named.length === 0) {
+    o.classList.remove('on');
+    return;
+  }
+  // current step = most recent named slide at-or-before current
+  let activeIdx = -1;
+  for (const n of named) { if (n.idx <= state.current) activeIdx = n.idx; else break; }
+  o.dataset.position = state.pathMode;
+  o.classList.toggle('labels-all', state.labelMode === 'all');
+  named.forEach((n, i) => {
+    const chip = document.createElement('div');
+    chip.className = 'path-chip';
+    if (n.idx === activeIdx) chip.classList.add('current');
+    else if (n.idx < activeIdx) chip.classList.add('past');
+    const dot = document.createElement('span'); dot.className = 'path-dot';
+    const lbl = document.createElement('span'); lbl.textContent = n.name;
+    chip.appendChild(dot); chip.appendChild(lbl);
+    chip.onclick = () => goTo(n.idx);
+    o.appendChild(chip);
+    if (i < named.length - 1) {
+      const line = document.createElement('div');
+      line.className = 'path-line';
+      o.appendChild(line);
+    }
+  });
+  o.classList.add('on');
+}
+
+function updateCounter() {
+  els.counter.textContent = state.manifest.length === 0 ? '0/0' : `${state.current + 1}/${state.manifest.length}`;
+}
+
+let renderNonce = 0;
+
+function sliceHTML(src, slideIdx) {
+  // Slice mode: render one section as its own document. We include the deck's body scripts
+  // so logic that activates / shows the slide still runs (the section is alone, so it'll
+  // be slide 0 from the script's POV). The nonce comment guarantees a unique srcdoc string
+  // so the browser always reloads.
+  const nonce = ++renderNonce;
+  const startInject = `<script>window.STARTING_SLIDE = 0;<\/script>`;
+  return `<!DOCTYPE html><html><head>${startInject}${src.headHTML}<!--n=${nonce}--></head><body>${src.sectionsHTML[slideIdx]}${src.bodyScripts || ''}</body></html>`;
+}
+
+function injectStartSlide(html, n) {
+  const nonce = ++renderNonce;
+  const inject = `<script>window.STARTING_SLIDE = ${n};<\/script><!--n=${nonce}-->`;
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + inject);
+  if (/<body[^>]*>/i.test(html)) return html.replace(/<body[^>]*>/i, m => inject + m);
+  return inject + html;
+}
+
+function renderThumbs() {
+  els.thumbs.innerHTML = '';
+  state.manifest.forEach((slide, idx) => {
+    const block = blockOf(idx);
+    const src = srcOf(slide.sourceId);
+    const div = document.createElement('div');
+    div.className = 'thumb';
+    if (idx === state.current) div.classList.add('current');
+    div.draggable = true;
+    div.dataset.idx = idx;
+
+    const iframe = document.createElement('iframe');
+    iframe.srcdoc = sliceHTML(src, slide.slideIndex);
+    div.appendChild(iframe);
+
+    const badges = document.createElement('div');
+    badges.className = 'badges';
+    const modeBadge = document.createElement('span');
+    modeBadge.className = 'badge';
+    modeBadge.textContent = block.mode === 'native' ? 'N' : 'S';
+    modeBadge.title = block.mode === 'native' ? 'Native — full-file mode, original animations preserved' : 'Sliced — single-section mode';
+    badges.appendChild(modeBadge);
+    const srcBadge = document.createElement('span');
+    srcBadge.className = `badge src-${src.id % 6}`;
+    srcBadge.textContent = src.name.replace(/\.html?$/i, '').slice(0, 10);
+    badges.appendChild(srcBadge);
+    div.appendChild(badges);
+
+    const num = document.createElement('div');
+    num.className = 'num';
+    num.textContent = idx + 1;
+    div.appendChild(num);
+
+    div.onclick = () => goTo(idx);
+
+    div.addEventListener('dragstart', e => {
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', String(idx));
+      div.classList.add('dragging');
+    });
+    div.addEventListener('dragend', () => div.classList.remove('dragging'));
+    div.addEventListener('dragover', e => {
+      e.preventDefault();
+      const r = div.getBoundingClientRect();
+      const before = (e.clientY - r.top) < r.height / 2;
+      div.classList.toggle('drop-before', before);
+      div.classList.toggle('drop-after', !before);
+    });
+    div.addEventListener('dragleave', () => {
+      div.classList.remove('drop-before', 'drop-after');
+    });
+    div.addEventListener('drop', e => {
+      e.preventDefault();
+      const fromIdx = parseInt(e.dataTransfer.getData('text/plain'), 10);
+      const r = div.getBoundingClientRect();
+      const before = (e.clientY - r.top) < r.height / 2;
+      let toIdx = idx + (before ? 0 : 1);
+      div.classList.remove('drop-before', 'drop-after');
+      if (Number.isNaN(fromIdx) || fromIdx === toIdx) return;
+      if (fromIdx < toIdx) toIdx--;
+      const [moved] = state.manifest.splice(fromIdx, 1);
+      state.manifest.splice(toIdx, 0, moved);
+      state.current = toIdx;
+      recompute();
+    });
+
+    els.thumbs.appendChild(div);
+  });
+}
+
+function updateCurrentMarker() {
+  els.thumbs.querySelectorAll('.thumb').forEach((t, i) => t.classList.toggle('current', i === state.current));
+  els.thumbs.querySelectorAll('.thumb')[state.current]?.scrollIntoView({ block: 'nearest' });
+  renderPath();
+  updateCounter();
+}
+
+// renderCanvas: load whatever the current slide needs.
+// If we're already in the same native block and the iframe has it loaded, do nothing
+// (the keystroke-forward path keeps it in sync).
+function renderCanvas(force = false) {
+  if (state.manifest.length === 0) {
+    els.canvasIframe.removeAttribute('src');
+    els.canvasIframe.srcdoc = '';
+    return;
+  }
+  const block = blockOf(state.current);
+  const slide = state.manifest[state.current];
+  const src = srcOf(slide.sourceId);
+  const iframe = els.canvasIframe;
+
+  if (block.mode === 'native') {
+    const blockKey = `native-${src.id}-${block.start}-${block.end}`;
+    if (!force && iframe.dataset.blockKey === blockKey) return;
+    iframe.removeAttribute('src');
+    iframe.srcdoc = injectStartSlide(src.fullHTML, slide.slideIndex);
+    iframe.dataset.blockKey = blockKey;
+    iframe.dataset.mode = 'native';
+  } else {
+    const sliceKey = `slice-${src.id}-${slide.slideIndex}`;
+    if (!force && iframe.dataset.blockKey === sliceKey) return;
+    iframe.removeAttribute('src');
+    iframe.srcdoc = sliceHTML(src, slide.slideIndex);
+    iframe.dataset.blockKey = sliceKey;
+    iframe.dataset.mode = 'sliced';
+  }
+}
+
+// ---------- navigation ----------
+
+function goTo(idx) {
+  if (idx < 0 || idx >= state.manifest.length) return;
+  const oldBlock = blockOf(state.current);
+  const newBlock = blockOf(idx);
+  state.current = idx;
+  if (oldBlock && newBlock && oldBlock === newBlock && oldBlock.mode === 'native') {
+    // same native block — reload the file at the new position so animations replay cleanly
+    renderCanvas(true);
+    updateCurrentMarker();
+  } else {
+    renderCanvas();
+    updateCurrentMarker();
+  }
+}
+
+function advance(dir) {
+  const next = state.current + dir;
+  if (next < 0 || next >= state.manifest.length) return;
+  const oldBlock = blockOf(state.current);
+  const newBlock = blockOf(next);
+  state.current = next;
+  if (oldBlock && newBlock && oldBlock === newBlock && oldBlock.mode === 'native') {
+    // same native block: forward the keystroke into the iframe; let the file's own JS animate.
+    forwardKey(dir > 0 ? 'ArrowRight' : 'ArrowLeft');
+    updateCurrentMarker();
+  } else {
+    renderCanvas();
+    updateCurrentMarker();
+  }
+}
+
+function forwardKey(key) {
+  const win = els.canvasIframe.contentWindow;
+  if (!win) return;
+  try {
+    const ev = new win.KeyboardEvent('keydown', { key, code: key, bubbles: true, cancelable: true });
+    win.document.dispatchEvent(ev);
+  } catch (e) {
+    // cross-origin or other failure — fall back to reload
+    renderCanvas(true);
+  }
+}
+
+window.addEventListener('keydown', e => {
+  const tag = document.activeElement && document.activeElement.tagName;
+  if (tag === 'INPUT' || tag === 'TEXTAREA') return;
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+    e.preventDefault(); advance(1);
+  } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+    e.preventDefault(); advance(-1);
+  } else if (e.key === 'f' || e.key === 'F') {
+    e.preventDefault(); togglePresent();
+  } else if (e.key === 'Escape') {
+    if (els.body.classList.contains('presenting')) { e.preventDefault(); togglePresent(); }
+  }
+});
+
+els.pathBtn.onclick = () => {
+  const i = PATH_CYCLE.indexOf(state.pathMode);
+  state.pathMode = PATH_CYCLE[(i + 1) % PATH_CYCLE.length];
+  els.pathBtn.textContent = `Path: ${state.pathMode}`;
+  els.labelsBtn.style.display = state.pathMode === 'off' ? 'none' : '';
+  renderPath();
+  saveSession();
+};
+
+els.labelsBtn.onclick = () => {
+  const i = LABEL_CYCLE.indexOf(state.labelMode);
+  state.labelMode = LABEL_CYCLE[(i + 1) % LABEL_CYCLE.length];
+  els.labelsBtn.textContent = `Labels: ${state.labelMode}`;
+  renderPath();
+  saveSession();
+};
+
+$('deck-name').addEventListener('input', saveSession);
+
+$('export-btn').onclick = downloadExport;
+$('present-btn').onclick = togglePresent;
+
+// When a deck loads in the canvas iframe, focus tends to land inside the iframe — so
+// the parent window's keydown listener never fires. We attach a relay on the iframe's
+// contentWindow (capture phase) that intercepts trusted user key presses, stops them
+// from reaching the deck's own document listener, and routes them to the parent's
+// advance() / togglePresent(). forwardKey() dispatches synthetic events to make the
+// deck animate; those have isTrusted=false so the relay ignores them — that's what
+// breaks the loop.
+els.canvasIframe.addEventListener('load', () => {
+  let win;
+  try { win = els.canvasIframe.contentWindow; } catch (e) { return; }
+  if (!win) return;
+  win.addEventListener('keydown', e => {
+    if (!e.isTrusted) return; // synthetic event from forwardKey — let the deck handle it
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault(); e.stopPropagation(); advance(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault(); e.stopPropagation(); advance(-1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault(); e.stopPropagation(); togglePresent();
+    } else if (e.key === 'Escape') {
+      if (els.body.classList.contains('presenting')) { e.preventDefault(); e.stopPropagation(); togglePresent(); }
+    }
+  }, true); // capture phase — fires before the deck's document listener
+});
+
+function downloadExport() {
+  if (state.manifest.length === 0) { alert('Nothing to export — drop a deck file in first.'); return; }
+  const deckName = ($('deck-name').value || 'Presentation').trim();
+  const data = {
+    deckName,
+    pathMode: state.pathMode,
+    labelMode: state.labelMode,
+    manifest: state.manifest,
+    sources: state.sources.map(s => ({
+      id: s.id, name: s.name, fullHTML: s.fullHTML, headHTML: s.headHTML,
+      bodyScripts: s.bodyScripts, sectionsHTML: s.sectionsHTML,
+      sectionNames: s.sectionNames, count: s.count,
+    })),
+  };
+  const json = JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>');
+  const escapedTitle = deckName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
+  const html = PLAYER_TEMPLATE.replace('__TITLE__', escapedTitle).replace('__DATA__', json);
+  const blob = new Blob([html], { type: 'text/html' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (deckName.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '') || 'presentation') + '.html';
+  document.body.appendChild(a);
+  a.click();
+  setTimeout(() => { document.body.removeChild(a); URL.revokeObjectURL(a.href); }, 0);
+}
+
+// Self-contained player: renders the orchestrated deck with the same nav + path overlay,
+// no edit chrome. Placeholders __TITLE__ and __DATA__ are filled at export time.
+const PLAYER_TEMPLATE = `<!DOCTYPE html>
+<!-- Generated by Mixdeck v0.1 — https://mixdeck.app -->
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>__TITLE__</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: #000; overflow: hidden; font-family: system-ui, -apple-system, sans-serif; }
+  #stage { position: relative; width: 100vw; height: 100vh; }
+  #frame { width: 100%; height: 100%; border: none; background: white; display: block; }
+  #counter { position: fixed; bottom: 10px; right: 14px; color: rgba(255,255,255,.4); font-size: 11px; pointer-events: none; z-index: 20; letter-spacing: .5px; }
+  #hint { position: fixed; bottom: 10px; left: 14px; color: rgba(255,255,255,.3); font-size: 11px; pointer-events: none; z-index: 20; transition: opacity .4s; }
+  #hint.hide { opacity: 0; }
+  #path-overlay { display: none; position: absolute; z-index: 10; align-items: center; pointer-events: auto;
+                  background: rgba(0,0,0,.18); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); transition: background .25s; }
+  #path-overlay:hover { background: rgba(0,0,0,.62); }
+  #path-overlay.on { display: flex; }
+  #path-overlay[data-position="top"]    { top: 0;    left: 50%; transform: translateX(-50%); flex-direction: row;    padding: 2px 4px; border-radius: 0 0 5px 5px; }
+  #path-overlay[data-position="bottom"] { bottom: 0; left: 50%; transform: translateX(-50%); flex-direction: row;    padding: 2px 4px; border-radius: 5px 5px 0 0; }
+  #path-overlay[data-position="left"]   { left: 0;   top: 50%;  transform: translateY(-50%); flex-direction: column; padding: 4px 2px; border-radius: 0 5px 5px 0; }
+  #path-overlay[data-position="right"]  { right: 0;  top: 50%;  transform: translateY(-50%); flex-direction: column; padding: 4px 2px; border-radius: 5px 0 0 5px; }
+  .path-chip { display: flex; align-items: center; flex-direction: row; padding: 3px 4px; color: rgba(255,255,255,.55); font-size: 10px; font-weight: 500; cursor: pointer; transition: color .2s; user-select: none; white-space: nowrap; letter-spacing: .3px; }
+  .path-chip:hover { color: white; }
+  .path-chip.past { color: rgba(255,255,255,.6); }
+  .path-chip.current { color: white; }
+  .path-label { max-width: 0; overflow: hidden; opacity: 0; margin-left: 0; transition: max-width .28s ease, opacity .2s, margin-left .28s; }
+  .path-chip.current .path-label,
+  #path-overlay.labels-all .path-chip .path-label { max-width: 160px; opacity: 1; margin-left: 5px; }
+  .path-dot { width: 4px; height: 4px; border-radius: 50%; background: currentColor; opacity: .45; flex-shrink: 0; transition: background .2s, opacity .2s; }
+  .path-chip.past .path-dot { opacity: .6; }
+  .path-chip.current .path-dot { background: #60a5fa; opacity: 1; }
+  .path-line { background: rgba(255,255,255,.09); flex-shrink: 0; transition: background .2s; }
+  #path-overlay.labels-all .path-line { background: rgba(255,255,255,.2); }
+  #path-overlay[data-position="top"]    .path-line,
+  #path-overlay[data-position="bottom"] .path-line { width: 8px; height: 1px; }
+  #path-overlay[data-position="left"]   .path-line,
+  #path-overlay[data-position="right"]  .path-line { width: 1px; height: 8px; margin: 0 auto; }
+</style>
+</head>
+<body>
+<div id="stage"><iframe id="frame"></iframe><div id="path-overlay"></div></div>
+<div id="counter"></div>
+<div id="hint">← → to navigate · F for fullscreen</div>
+<script>
+const DATA = __DATA__;
+const SOURCES = DATA.sources;
+const MANIFEST = DATA.manifest;
+const PATH_MODE = DATA.pathMode;
+const LABEL_MODE = DATA.labelMode === 'all' ? 'all' : 'minimal';
+let current = 0;
+let renderNonce = 0;
+const srcOf = id => SOURCES.find(s => s.id === id);
+
+function computeBlocks() {
+  const out = []; let i = 0;
+  while (i < MANIFEST.length) {
+    const start = i; const sid = MANIFEST[i].sourceId; let exp = MANIFEST[i].slideIndex;
+    while (i < MANIFEST.length && MANIFEST[i].sourceId === sid && MANIFEST[i].slideIndex === exp) { i++; exp++; }
+    const s = srcOf(sid); const startIdx = MANIFEST[start].slideIndex;
+    const isFull = startIdx === 0 && exp === s.count;
+    out.push({ start, end: i, sourceId: sid, mode: isFull ? 'native' : 'sliced' });
+  }
+  return out;
+}
+const blocks = computeBlocks();
+const blockOf = idx => blocks.find(b => idx >= b.start && idx < b.end);
+
+function injectStart(html, n) {
+  const nonce = ++renderNonce;
+  const inj = '<script>window.STARTING_SLIDE=' + n + ';<\\/script><!--n=' + nonce + '-->';
+  if (/<head[^>]*>/i.test(html)) return html.replace(/<head[^>]*>/i, m => m + inj);
+  if (/<body[^>]*>/i.test(html)) return html.replace(/<body[^>]*>/i, m => inj + m);
+  return inj + html;
+}
+function sliceHTML(src, idx) {
+  const n = ++renderNonce;
+  return '<!DOCTYPE html><html><head><script>window.STARTING_SLIDE=0;<\\/script>' + src.headHTML + '<!--n=' + n + '--></head><body>' + src.sectionsHTML[idx] + (src.bodyScripts || '') + '</body></html>';
+}
+
+const frame = document.getElementById('frame');
+const counter = document.getElementById('counter');
+const overlay = document.getElementById('path-overlay');
+const hint = document.getElementById('hint');
+let hintTimer = setTimeout(() => hint.classList.add('hide'), 3500);
+
+function render(force) {
+  if (MANIFEST.length === 0) return;
+  const b = blockOf(current); const sl = MANIFEST[current]; const s = srcOf(sl.sourceId);
+  if (b.mode === 'native') {
+    const k = 'n-' + s.id + '-' + b.start + '-' + b.end;
+    if (!force && frame.dataset.k === k) return;
+    frame.srcdoc = injectStart(s.fullHTML, sl.slideIndex);
+    frame.dataset.k = k;
+  } else {
+    const k = 's-' + s.id + '-' + sl.slideIndex;
+    if (!force && frame.dataset.k === k) return;
+    frame.srcdoc = sliceHTML(s, sl.slideIndex);
+    frame.dataset.k = k;
+  }
+}
+function updateCounter() { counter.textContent = (current + 1) + ' / ' + MANIFEST.length; }
+function forwardKey(key) {
+  const w = frame.contentWindow; if (!w) return;
+  try { w.document.dispatchEvent(new w.KeyboardEvent('keydown', { key, code: key, bubbles: true })); }
+  catch (e) { render(true); }
+}
+function goTo(i) {
+  if (i < 0 || i >= MANIFEST.length) return;
+  const ob = blockOf(current); const nb = blockOf(i); current = i;
+  if (ob && nb && ob === nb && ob.mode === 'native') render(true); else render();
+  renderPath(); updateCounter();
+}
+function advance(dir) {
+  const n = current + dir; if (n < 0 || n >= MANIFEST.length) return;
+  const ob = blockOf(current); const nb = blockOf(n); current = n;
+  if (ob && nb && ob === nb && ob.mode === 'native') forwardKey(dir > 0 ? 'ArrowRight' : 'ArrowLeft');
+  else render();
+  renderPath(); updateCounter();
+}
+function renderPath() {
+  overlay.innerHTML = '';
+  if (PATH_MODE === 'off' || MANIFEST.length === 0) { overlay.classList.remove('on'); return; }
+  const named = [];
+  MANIFEST.forEach((sl, i) => {
+    const s = srcOf(sl.sourceId); const nm = s.sectionNames[sl.slideIndex];
+    if (!nm) return;
+    if (named.length > 0 && named[named.length - 1].nm === nm) return;
+    named.push({ i, nm });
+  });
+  if (named.length === 0) { overlay.classList.remove('on'); return; }
+  let active = -1;
+  for (const n of named) { if (n.i <= current) active = n.i; else break; }
+  overlay.dataset.position = PATH_MODE;
+  overlay.classList.toggle('labels-all', LABEL_MODE === 'all');
+  named.forEach((n, k) => {
+    const c = document.createElement('div'); c.className = 'path-chip';
+    if (n.i === active) c.classList.add('current'); else if (n.i < active) c.classList.add('past');
+    const d = document.createElement('span'); d.className = 'path-dot';
+    const l = document.createElement('span'); l.className = 'path-label'; l.textContent = n.nm;
+    c.appendChild(d); c.appendChild(l);
+    c.onclick = () => goTo(n.i);
+    overlay.appendChild(c);
+    if (k < named.length - 1) { const ln = document.createElement('div'); ln.className = 'path-line'; overlay.appendChild(ln); }
+  });
+  overlay.classList.add('on');
+}
+function toggleFullscreen() {
+  if (document.fullscreenElement) document.exitFullscreen();
+  else document.documentElement.requestFullscreen();
+}
+window.addEventListener('keydown', e => {
+  if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') { e.preventDefault(); advance(1); }
+  else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') { e.preventDefault(); advance(-1); }
+  else if (e.key === 'f' || e.key === 'F') { e.preventDefault(); toggleFullscreen(); }
+});
+// Same focus-trap fix as the editor: when the deck loads in the iframe, intercept
+// trusted user keys on the iframe's contentWindow (capture phase) so the parent's
+// advance() runs even when the user clicked into the slide area. Synthetic events
+// from forwardKey() have isTrusted=false and are ignored — that's what avoids the
+// loop while still letting the deck's own script animate slides natively.
+frame.addEventListener('load', () => {
+  let w;
+  try { w = frame.contentWindow; } catch (e) { return; }
+  if (!w) return;
+  w.addEventListener('keydown', e => {
+    if (!e.isTrusted) return;
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') {
+      e.preventDefault(); e.stopPropagation(); advance(1);
+    } else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') {
+      e.preventDefault(); e.stopPropagation(); advance(-1);
+    } else if (e.key === 'f' || e.key === 'F') {
+      e.preventDefault(); e.stopPropagation(); toggleFullscreen();
+    }
+  }, true);
+});
+render(true); renderPath(); updateCounter();
+<\/script>
+</body>
+</html>`;
+function togglePresent() {
+  const goingIn = !els.body.classList.contains('presenting');
+  // Always hide chrome via the .presenting class — the visual change does NOT depend on
+  // the browser actually granting fullscreen. If we're hosted in a sandboxed preview iframe,
+  // requestFullscreen will silently fail; the chrome still hides and Esc / F still exits.
+  els.body.classList.toggle('presenting', goingIn);
+  if (goingIn) {
+    const req = document.documentElement.requestFullscreen
+             || document.documentElement.webkitRequestFullscreen;
+    if (req) { try { const p = req.call(document.documentElement); if (p && p.catch) p.catch(() => {}); } catch (e) {} }
+  } else {
+    const exit = document.exitFullscreen || document.webkitExitFullscreen;
+    if (exit && (document.fullscreenElement || document.webkitFullscreenElement)) {
+      try { const p = exit.call(document); if (p && p.catch) p.catch(() => {}); } catch (e) {}
+    }
+  }
+}
+// If the user exits browser fullscreen via Esc, also drop the .presenting class so the chrome reappears.
+document.addEventListener('fullscreenchange', () => {
+  if (!document.fullscreenElement && els.body.classList.contains('presenting')) {
+    els.body.classList.remove('presenting');
+  }
+});
+
+// ---------- bundled sample decks (used by "Try with samples") ----------
+// AI-era conference talk: two speakers with deliberately different lanes.
+// MAYA   = researcher angle — capabilities, benchmarks, open questions (dark/mono palette)
+// JORDAN = practitioner angle — product they shipped, what worked / broke, numbers (warm/sans palette)
+// The visual contrast is the point: mixing them in Mixdeck shows the value of combining
+// decks that look nothing alike but cover complementary content.
+
+const SAMPLE_MAYA = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Maya — What changed in 2026</title>
+<style>
+  /* Root font-size scales with viewport — maintains 16:9 design proportions at any display size. */
+  html { font-size: min(1.25vw, 2.22vh); }
+  body { margin: 0; font-family: 'JetBrains Mono', 'SF Mono', Menlo, monospace; background: linear-gradient(135deg, #0c1a36 0%, #1e1b4b 100%); color: #e8edf6; height: 100vh; overflow: hidden; }
+  section.slide { position: absolute; inset: 0; padding: 4rem 5.5rem; display: none; flex-direction: column; justify-content: center; align-items: flex-start; box-sizing: border-box; }
+  section.slide.active { display: flex; animation: in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  @keyframes in { from { opacity: 0; transform: translateY(1.25rem); } to { opacity: 1; transform: none; } }
+  h1 { font-size: 3.75rem; margin: 0 0 1.75rem; font-weight: 700; letter-spacing: -1.5px; line-height: 1.05; color: #f5f9ff; }
+  h2 { font-size: 0.8125rem; margin: 0 0 1.5rem; font-weight: 500; color: #60a5fa; text-transform: uppercase; letter-spacing: 4px; }
+  p { font-size: 1.375rem; line-height: 1.55; max-width: 57.5rem; color: #cdd5e6; margin: 0; }
+  ul { padding-left: 0; list-style: none; margin: 0; max-width: 57.5rem; }
+  li { font-size: 1.375rem; line-height: 1.55; color: #cdd5e6; margin-bottom: 0.875rem; padding-left: 1.75rem; position: relative; opacity: 0; animation: liIn 0.4s ease forwards; }
+  li::before { content: '→'; position: absolute; left: 0; color: #60a5fa; }
+  section.active li:nth-child(1) { animation-delay: 0.25s; }
+  section.active li:nth-child(2) { animation-delay: 0.4s; }
+  section.active li:nth-child(3) { animation-delay: 0.55s; }
+  section.active li:nth-child(4) { animation-delay: 0.7s; }
+  @keyframes liIn { from { opacity: 0; transform: translateX(-0.75rem); } to { opacity: 1; transform: none; } }
+  .byline { margin-top: 0.75rem; font-size: 0.9375rem; color: #94a3b8; letter-spacing: 1px; }
+  .stat-row { display: flex; gap: 3.75rem; margin-top: 1rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 0.375rem; }
+  .stat .num { font-size: 4.5rem; font-weight: 700; color: #22d3ee; line-height: 1; letter-spacing: -2px; }
+  .stat .lbl { font-size: 0.8125rem; color: #94a3b8; letter-spacing: 1.5px; text-transform: uppercase; max-width: 16.25rem; line-height: 1.4; }
+  .stat .lbl em { color: #64748b; font-style: normal; font-size: 0.6875rem; display: block; margin-top: 0.25rem; }
+  .quote { font-size: 1.625rem; line-height: 1.5; color: #f5f9ff; max-width: 58.75rem; border-left: 3px solid #60a5fa; padding-left: 1.5rem; }
+  .quote em { color: #a78bfa; font-style: normal; }
+  .corner { position: absolute; top: 2rem; right: 2.75rem; font-size: 0.625rem; color: #475569; letter-spacing: 3px; }
+  /* slide 2: capability jump bar chart */
+  .bench { width: 100%; max-width: 65rem; margin-top: 0.75rem; display: flex; flex-direction: column; gap: 1.75rem; }
+  .bench-row { display: grid; grid-template-columns: 16rem 1fr; gap: 2rem; align-items: center; }
+  .bench-meta { display: flex; flex-direction: column; gap: 0.35rem; }
+  .bench-meta .bench-name { font-size: 0.75rem; color: #94a3b8; letter-spacing: 0.18rem; text-transform: uppercase; font-weight: 500; }
+  .bench-meta .bench-delta { font-size: 1.25rem; color: #22d3ee; font-weight: 700; letter-spacing: 0.04rem; line-height: 1.1; }
+  .bench-bars { display: flex; flex-direction: column; gap: 0.625rem; }
+  .bar-pair { display: grid; grid-template-columns: 2rem 1fr 5.5rem; gap: 0.875rem; align-items: center; }
+  .bar-pair .year { font-size: 0.7rem; color: #64748b; letter-spacing: 0.1rem; font-weight: 500; }
+  .bar-pair .val { font-size: 1rem; color: #94a3b8; text-align: right; font-weight: 500; opacity: 0; transition: opacity 0.5s ease; transition-delay: 1.1s; }
+  .bar-pair.new .val { color: #22d3ee; font-weight: 700; font-size: 1.25rem; }
+  .bar-track { position: relative; height: 0.625rem; background: rgba(255,255,255,.05); border-radius: 0.3125rem; overflow: hidden; }
+  .bar-fill { height: 100%; border-radius: 0.3125rem; width: 0; transition: width 1.1s cubic-bezier(0.2, 0.8, 0.2, 1); }
+  .bar-pair.old .bar-fill { background: rgba(148,163,184,.55); transition-delay: 0.3s; }
+  .bar-pair.new .bar-fill { background: linear-gradient(90deg, #22d3ee, #60a5fa); transition-delay: 0.55s; box-shadow: 0 0 1rem rgba(34,211,238,.4); }
+  section.slide.active .bar-fill { width: var(--w); }
+  section.slide.active .bar-pair .val { opacity: 1; }
+  /* slide 3: agent loop diagram */
+  .loop-wrap { display: flex; align-items: center; gap: 3.5rem; width: 100%; max-width: 68.75rem; margin-top: 0.5rem; }
+  .loop-wrap .quote { flex: 1; font-size: 1.375rem; }
+  .loop-svg { flex: 0 0 15rem; width: 15rem; height: 15rem; }
+  .loop-svg circle.node { fill: rgba(96, 165, 250, 0.12); stroke: #60a5fa; stroke-width: 1.5; animation: nodePulse 3.5s ease-in-out infinite; }
+  .loop-svg circle.node.n1 { animation-delay: 0s; }
+  .loop-svg circle.node.n2 { animation-delay: 0.875s; }
+  .loop-svg circle.node.n3 { animation-delay: 1.75s; }
+  .loop-svg circle.node.n4 { animation-delay: 2.625s; }
+  @keyframes nodePulse { 0%, 100% { fill: rgba(96, 165, 250, 0.12); } 25% { fill: rgba(34, 211, 238, 0.32); } 50% { fill: rgba(96, 165, 250, 0.12); } }
+  .loop-svg text { fill: #cdd5e6; font-family: 'JetBrains Mono', monospace; font-size: 10px; letter-spacing: 1.5px; text-anchor: middle; dominant-baseline: middle; }
+  .loop-svg path.arrow { fill: none; stroke: #60a5fa; stroke-width: 1.2; opacity: 0.55; }
+  .loop-svg .arrowhead { fill: #60a5fa; opacity: 0.7; }
+</style>
+</head>
+<body>
+
+<section class="slide" data-name="Intro">
+  <h2>RC1 · RESEARCH</h2>
+  <h1>What changed in 2026</h1>
+  <p class="byline">Maya Chen · Frontier Lab</p>
+</section>
+
+<section class="slide" data-name="Capability">
+  <div class="corner">MAYA · 02</div>
+  <h2>The capability jump</h2>
+  <h1>One year, three thresholds.</h1>
+  <div class="bench">
+    <div class="bench-row">
+      <div class="bench-meta">
+        <span class="bench-name">FrontierMath</span>
+        <span class="bench-delta">+87 pp</span>
+      </div>
+      <div class="bench-bars">
+        <div class="bar-pair old">
+          <span class="year">'24</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 4.4%"></div></div>
+          <span class="val">4%</span>
+        </div>
+        <div class="bar-pair new">
+          <span class="year">'26</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 100%"></div></div>
+          <span class="val">91%</span>
+        </div>
+      </div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-meta">
+        <span class="bench-name">SWE-Bench Verified</span>
+        <span class="bench-delta">+65 pp</span>
+      </div>
+      <div class="bench-bars">
+        <div class="bar-pair old">
+          <span class="year">'24</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 22.6%"></div></div>
+          <span class="val">19%</span>
+        </div>
+        <div class="bar-pair new">
+          <span class="year">'26</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 100%"></div></div>
+          <span class="val">84%</span>
+        </div>
+      </div>
+    </div>
+    <div class="bench-row">
+      <div class="bench-meta">
+        <span class="bench-name">Autonomous task</span>
+        <span class="bench-delta">27× longer</span>
+      </div>
+      <div class="bench-bars">
+        <div class="bar-pair old">
+          <span class="year">'24</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 3.7%"></div></div>
+          <span class="val">14 min</span>
+        </div>
+        <div class="bar-pair new">
+          <span class="year">'26</span>
+          <div class="bar-track"><div class="bar-fill" style="--w: 100%"></div></div>
+          <span class="val">6.2 h</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-name="Long horizon">
+  <div class="corner">MAYA · 03</div>
+  <h2>Long-horizon reasoning</h2>
+  <h1>The agent loop converged.</h1>
+  <div class="loop-wrap">
+    <svg class="loop-svg" viewBox="0 0 240 240" aria-hidden="true">
+      <defs>
+        <marker id="ah" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 0 L 10 5 L 0 10 z" class="arrowhead"/>
+        </marker>
+      </defs>
+      <!-- Clockwise curved arrows between node centers, bowed outward -->
+      <path class="arrow" d="M 142,42 A 80,80 0 0 1 198,98" marker-end="url(#ah)"/>
+      <path class="arrow" d="M 198,142 A 80,80 0 0 1 142,198" marker-end="url(#ah)"/>
+      <path class="arrow" d="M 98,198 A 80,80 0 0 1 42,142" marker-end="url(#ah)"/>
+      <path class="arrow" d="M 42,98 A 80,80 0 0 1 98,42" marker-end="url(#ah)"/>
+      <!-- Nodes -->
+      <circle class="node n1" cx="120" cy="35" r="30"/>
+      <text x="120" y="35">PLAN</text>
+      <circle class="node n2" cx="205" cy="120" r="30"/>
+      <text x="205" y="120">ACT</text>
+      <circle class="node n3" cx="120" cy="205" r="30"/>
+      <text x="120" y="205">OBSERVE</text>
+      <circle class="node n4" cx="35" cy="120" r="30"/>
+      <text x="35" y="120">REFLECT</text>
+    </svg>
+    <p class="quote">Models can now sustain a coherent goal across thousands of steps — keeping state, asking for clarification, revising plans mid-execution. <em>The interesting agents aren't bigger models; they're tighter loops.</em></p>
+  </div>
+</section>
+
+<section class="slide" data-name="Bottleneck">
+  <div class="corner">MAYA · 04</div>
+  <h2>The bottleneck moved</h2>
+  <h1>Models aren't the constraint anymore.</h1>
+  <ul>
+    <li>Schema design beats prompt engineering</li>
+    <li>Eval coverage beats raw parameter count</li>
+    <li>Trust boundaries beat capability ceilings</li>
+    <li>Most agent failures are tool-shaped, not model-shaped</li>
+  </ul>
+</section>
+
+<section class="slide" data-name="Open questions">
+  <div class="corner">MAYA · 05</div>
+  <h2>Open questions</h2>
+  <h1>What we still don't know.</h1>
+  <ul>
+    <li>Alignment stable for ~10⁴ tokens — past that, drift</li>
+    <li>Can humans meaningfully audit a 10k-step plan?</li>
+    <li>Who writes the spec the agent is aligned to?</li>
+  </ul>
+</section>
+
+<script>
+  const slides = [...document.querySelectorAll('section.slide')];
+  let idx = (typeof window.STARTING_SLIDE === 'number' ? window.STARTING_SLIDE : 0);
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') show(idx - 1);
+  });
+  show(idx);
+<\/script>
+</body>
+</html>`;
+
+const SAMPLE_JORDAN = `<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Jordan — What we shipped</title>
+<style>
+  /* Root font-size scales with viewport — maintains 16:9 design proportions at any display size. */
+  html { font-size: min(1.25vw, 2.22vh); }
+  body { margin: 0; font-family: 'Inter', system-ui, -apple-system, sans-serif; background: #faf7f2; color: #1f2937; height: 100vh; overflow: hidden; }
+  section.slide { position: absolute; inset: 0; padding: 4rem 5.5rem; display: none; flex-direction: column; justify-content: center; align-items: flex-start; box-sizing: border-box; }
+  section.slide.active { display: flex; animation: in 0.45s cubic-bezier(0.2, 0.7, 0.2, 1); }
+  @keyframes in { from { opacity: 0; transform: scale(0.98); } to { opacity: 1; transform: none; } }
+  h1 { font-size: 4rem; margin: 0 0 1.25rem; font-weight: 700; letter-spacing: -2px; line-height: 1.05; color: #111827; }
+  h2 { font-size: 0.75rem; margin: 0 0 1.75rem; font-weight: 600; color: #f97316; text-transform: uppercase; letter-spacing: 3px; }
+  p { font-size: 1.375rem; line-height: 1.55; max-width: 57.5rem; color: #374151; margin: 0; }
+  .byline { margin-top: 1rem; font-size: 0.9375rem; color: #6b7280; }
+  .subtitle { font-size: 1.625rem; color: #4b5563; max-width: 50rem; margin-top: 0.5rem; }
+  ul { padding: 0; list-style: none; margin: 0; max-width: 57.5rem; }
+  li { font-size: 1.375rem; line-height: 1.55; color: #374151; margin-bottom: 1.125rem; padding-left: 2.25rem; position: relative; opacity: 0; animation: liIn 0.4s ease forwards; }
+  li::before { content: ''; position: absolute; left: 0; top: 0.875rem; width: 1.375rem; height: 0.125rem; background: #f97316; }
+  section.active li:nth-child(1) { animation-delay: 0.2s; }
+  section.active li:nth-child(2) { animation-delay: 0.35s; }
+  section.active li:nth-child(3) { animation-delay: 0.5s; }
+  section.active li:nth-child(4) { animation-delay: 0.65s; }
+  @keyframes liIn { from { opacity: 0; transform: translateX(-0.625rem); } to { opacity: 1; transform: none; } }
+  li strong { color: #111827; font-weight: 600; }
+  .stat-row { display: flex; gap: 4rem; margin-top: 1.25rem; flex-wrap: wrap; }
+  .stat { display: flex; flex-direction: column; gap: 0.375rem; }
+  .stat .num { font-size: 4.75rem; font-weight: 800; line-height: 1; background: linear-gradient(135deg, #f97316, #fbbf24); -webkit-background-clip: text; background-clip: text; color: transparent; letter-spacing: -2.5px; }
+  .stat .lbl { font-size: 0.8125rem; color: #6b7280; text-transform: uppercase; letter-spacing: 1.5px; max-width: 13.75rem; line-height: 1.4; }
+  .product-name { font-size: 6rem; font-weight: 800; letter-spacing: -3px; color: #111827; line-height: 1; margin: 0 0 0.75rem; }
+  .closing-handle { font-size: 0.9375rem; color: #6b7280; margin-top: 1.5rem; }
+  .corner { position: absolute; top: 2rem; right: 2.75rem; font-size: 0.625rem; color: #9ca3af; letter-spacing: 3px; font-weight: 600; }
+  /* slide 2: product flow */
+  .flow { margin-top: 2.25rem; width: 100%; max-width: 60rem; }
+  .flow svg { width: 100%; height: auto; display: block; overflow: visible; }
+  .flow .node-bg { fill: #ffffff; stroke: #e5e7eb; stroke-width: 1.5; }
+  .flow .node-bg.focal { fill: url(#coralGrad); stroke: none; filter: drop-shadow(0 4px 16px rgba(249,115,22,.25)); }
+  .flow .node-label { font-family: 'Inter', sans-serif; font-size: 13px; font-weight: 700; letter-spacing: 2px; fill: #6b7280; text-transform: uppercase; }
+  .flow .node-label.focal { fill: #ffffff; font-size: 22px; letter-spacing: 1px; font-weight: 800; }
+  .flow .node-sub { font-family: 'Inter', sans-serif; font-size: 10px; letter-spacing: 1.5px; fill: #9ca3af; text-transform: uppercase; }
+  .flow .node-sub.focal { fill: #fff7ed; opacity: 0.9; font-size: 10px; letter-spacing: 2px; }
+  .flow .icon-stroke { stroke: #9ca3af; stroke-width: 1.5; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+  .flow .arrow-line { stroke: #9ca3af; stroke-width: 2; fill: none; stroke-dasharray: 240; stroke-dashoffset: 240; }
+  .flow .arrow-line.feedback { stroke: #f97316; stroke-dasharray: 320; stroke-dashoffset: 320; opacity: 0.8; stroke-width: 1.6; }
+  .flow .feedback-label { font-family: 'Inter', sans-serif; font-size: 13px; font-style: italic; fill: #f97316; text-anchor: middle; opacity: 0; transition: opacity 0.4s ease 1.5s; font-weight: 500; }
+  section.slide.active .flow .arrow-line { animation: drawIn 0.9s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: 0.6s; }
+  section.slide.active .flow .arrow-line.a2 { animation-delay: 0.85s; }
+  section.slide.active .flow .arrow-line.feedback { animation: drawInFb 1.1s cubic-bezier(0.2, 0.7, 0.2, 1) forwards; animation-delay: 1.15s; }
+  section.slide.active .flow .feedback-label { opacity: 1; }
+  @keyframes drawIn { to { stroke-dashoffset: 0; } }
+  @keyframes drawInFb { to { stroke-dashoffset: 0; } }
+  /* slide 5: sparklines — placed BETWEEN num and label so they align across stats
+     regardless of label wrap. */
+  .stat .spark { width: 9rem; height: 2.75rem; margin-top: 0.75rem; opacity: 0; transition: opacity 0.6s ease; transition-delay: 0.6s; display: block; }
+  section.slide.active .stat .spark { opacity: 1; }
+  .stat .spark + .lbl { margin-top: 0.5rem; }
+  .spark .line { fill: none; stroke: #f97316; stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+  .spark .area { fill: url(#sparkArea); opacity: 0.7; }
+  .spark .dot { fill: #f97316; }
+  .spark .baseline { stroke: rgba(0,0,0,.06); stroke-width: 1; stroke-dasharray: 2 3; }
+</style>
+</head>
+<body>
+
+<section class="slide" data-name="Intro">
+  <h2>RC1 · PRODUCT</h2>
+  <h1>What we shipped.</h1>
+  <p class="byline">Jordan Park · Director of Engineering</p>
+</section>
+
+<section class="slide" data-name="Product">
+  <div class="corner">JORDAN · 02</div>
+  <h2>The product</h2>
+  <div class="product-name">Mira</div>
+  <p class="subtitle">A spec-first agent for ops. Takes a written runbook, executes it, asks when stuck.</p>
+  <div class="flow">
+    <svg viewBox="0 0 920 280" aria-hidden="true">
+      <defs>
+        <linearGradient id="coralGrad" x1="0" y1="0" x2="1" y2="1">
+          <stop offset="0%" stop-color="#f97316"/>
+          <stop offset="100%" stop-color="#fbbf24"/>
+        </linearGradient>
+        <marker id="jah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#9ca3af"/>
+        </marker>
+        <marker id="jahF" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+          <path d="M 0 0 L 10 5 L 0 10 z" fill="#f97316"/>
+        </marker>
+      </defs>
+
+      <!-- Layout: nodes vertically centered at y=200. Side nodes 90 tall (y=155-245). MIRA 130 tall (y=135-265). -->
+
+      <!-- Node 1: RUNBOOK (document icon + label) -->
+      <g transform="translate(40, 155)">
+        <rect class="node-bg" x="0" y="0" width="180" height="90" rx="12"/>
+        <!-- doc icon, vertically centered -->
+        <g transform="translate(20, 18)">
+          <path class="icon-stroke" d="M 4 0 L 30 0 L 40 10 L 40 54 L 4 54 Z"/>
+          <line class="icon-stroke" x1="12" y1="16" x2="34" y2="16"/>
+          <line class="icon-stroke" x1="12" y1="26" x2="34" y2="26"/>
+          <line class="icon-stroke" x1="12" y1="36" x2="34" y2="36"/>
+          <line class="icon-stroke" x1="12" y1="46" x2="26" y2="46"/>
+        </g>
+        <text class="node-label" x="168" y="42" text-anchor="end" dominant-baseline="middle">RUNBOOK</text>
+        <text class="node-sub" x="168" y="60" text-anchor="end" dominant-baseline="middle">written ops doc</text>
+      </g>
+
+      <!-- Arrow 1: from right edge of Node 1 (220) to left edge of Node 2 (360) at y=200 -->
+      <path class="arrow-line a1" d="M 222 200 L 358 200" marker-end="url(#jah)"/>
+
+      <!-- Node 2: MIRA (focal, larger, gradient) -->
+      <g transform="translate(360, 135)">
+        <rect class="node-bg focal" x="0" y="0" width="200" height="130" rx="16"/>
+        <text class="node-label focal" x="100" y="58" text-anchor="middle" dominant-baseline="middle">MIRA</text>
+        <text class="node-sub focal" x="100" y="88" text-anchor="middle" dominant-baseline="middle">THE AGENT</text>
+      </g>
+
+      <!-- Arrow 2: from right edge of MIRA (560) to left edge of Node 3 (700) at y=200 -->
+      <path class="arrow-line a2" d="M 562 200 L 698 200" marker-end="url(#jah)"/>
+
+      <!-- Node 3: ACTION (terminal icon + label) -->
+      <g transform="translate(700, 155)">
+        <rect class="node-bg" x="0" y="0" width="180" height="90" rx="12"/>
+        <!-- terminal-window icon, vertically centered -->
+        <g transform="translate(20, 16)">
+          <rect class="icon-stroke" x="0" y="0" width="44" height="58" rx="4"/>
+          <line class="icon-stroke" x1="0" y1="12" x2="44" y2="12"/>
+          <circle cx="6" cy="6" r="1.2" fill="#9ca3af"/>
+          <circle cx="12" cy="6" r="1.2" fill="#9ca3af"/>
+          <circle cx="18" cy="6" r="1.2" fill="#9ca3af"/>
+          <path class="icon-stroke" d="M 8 22 L 14 30 L 8 38"/>
+          <line class="icon-stroke" x1="18" y1="38" x2="34" y2="38"/>
+        </g>
+        <text class="node-label" x="168" y="42" text-anchor="end" dominant-baseline="middle">ACTION</text>
+        <text class="node-sub" x="168" y="60" text-anchor="end" dominant-baseline="middle">executed step</text>
+      </g>
+
+      <!-- Feedback arrow: from MIRA top (460, 135) up and back down to MIRA top-left (385, 135) -->
+      <path class="arrow-line feedback" d="M 460 135 C 460 65, 385 65, 385 132" marker-end="url(#jahF)"/>
+      <text class="feedback-label" x="422" y="56">"asks when stuck"</text>
+    </svg>
+  </div>
+</section>
+
+<section class="slide" data-name="What worked">
+  <div class="corner">JORDAN · 03</div>
+  <h2>What worked</h2>
+  <h1>Three bets that held.</h1>
+  <ul>
+    <li><strong>Narrow scope.</strong> We do ops. Not chat, not analysis, not creative.</li>
+    <li><strong>Spec-first.</strong> Every action cites a runbook line. No spec, no execution.</li>
+    <li><strong>Eval gates.</strong> PRs that drop replay coverage don't merge.</li>
+  </ul>
+</section>
+
+<section class="slide" data-name="What broke">
+  <div class="corner">JORDAN · 04</div>
+  <h2>What broke</h2>
+  <h1>And what we're still fixing.</h1>
+  <ul>
+    <li>Context limits on tasks past ~3 hours of tool history</li>
+    <li>Hallucinated tools when the runbook was vague</li>
+    <li>Tail latency from sequential calls — moved to parallel where safe</li>
+  </ul>
+</section>
+
+<section class="slide" data-name="Numbers">
+  <div class="corner">JORDAN · 05</div>
+  <h2>Six months in</h2>
+  <h1>Where Mira is now.</h1>
+  <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+    <defs>
+      <linearGradient id="sparkArea" x1="0" y1="0" x2="0" y2="1">
+        <stop offset="0%" stop-color="#f97316" stop-opacity="0.35"/>
+        <stop offset="100%" stop-color="#fbbf24" stop-opacity="0"/>
+      </linearGradient>
+    </defs>
+  </svg>
+  <div class="stat-row">
+    <div class="stat">
+      <span class="num">12.4k</span>
+      <svg class="spark" viewBox="0 0 140 44" preserveAspectRatio="none">
+        <line class="baseline" x1="0" y1="38" x2="140" y2="38"/>
+        <path class="area" d="M 0 36 L 10 35 L 22 34 L 34 33 L 46 32 L 58 30 L 70 27 L 82 23 L 94 17 L 106 11 L 118 6 L 132 4 L 132 38 L 0 38 Z"/>
+        <polyline class="line" points="0,36 10,35 22,34 34,33 46,32 58,30 70,27 82,23 94,17 106,11 118,6 132,4"/>
+        <circle class="dot" cx="132" cy="4" r="3"/>
+      </svg>
+      <span class="lbl">daily active users</span>
+    </div>
+    <div class="stat">
+      <span class="num">78%</span>
+      <svg class="spark" viewBox="0 0 140 44" preserveAspectRatio="none">
+        <line class="baseline" x1="0" y1="38" x2="140" y2="38"/>
+        <path class="area" d="M 0 34 L 12 33 L 24 31 L 36 27 L 48 21 L 60 15 L 72 11 L 84 9 L 96 8 L 108 7 L 120 6 L 132 6 L 132 38 L 0 38 Z"/>
+        <polyline class="line" points="0,34 12,33 24,31 36,27 48,21 60,15 72,11 84,9 96,8 108,7 120,6 132,6"/>
+        <circle class="dot" cx="132" cy="6" r="3"/>
+      </svg>
+      <span class="lbl">week-4 retention</span>
+    </div>
+    <div class="stat">
+      <span class="num">41%</span>
+      <svg class="spark" viewBox="0 0 140 44" preserveAspectRatio="none">
+        <line class="baseline" x1="0" y1="38" x2="140" y2="38"/>
+        <path class="area" d="M 0 36 L 12 34 L 24 31 L 36 28 L 48 25 L 60 22 L 72 19 L 84 16 L 96 13 L 108 11 L 120 9 L 132 8 L 132 38 L 0 38 Z"/>
+        <polyline class="line" points="0,36 12,34 24,31 36,28 48,25 60,22 72,19 84,16 96,13 108,11 120,9 132,8"/>
+        <circle class="dot" cx="132" cy="8" r="3"/>
+      </svg>
+      <span class="lbl">of escalations auto-resolved</span>
+    </div>
+  </div>
+</section>
+
+<section class="slide" data-name="Closing">
+  <div class="corner">JORDAN · 06</div>
+  <h2>Closing thought</h2>
+  <h1>Agents you'd actually let log in.</h1>
+  <p class="closing-handle">@jordanpark · jordan@rc1.com</p>
+</section>
+
+<script>
+  const slides = [...document.querySelectorAll('section.slide')];
+  let idx = (typeof window.STARTING_SLIDE === 'number' ? window.STARTING_SLIDE : 0);
+  function show(i) {
+    idx = Math.max(0, Math.min(slides.length - 1, i));
+    slides.forEach((s, j) => s.classList.toggle('active', j === idx));
+  }
+  document.addEventListener('keydown', e => {
+    if (e.key === 'ArrowRight' || e.key === 'ArrowDown' || e.key === ' ' || e.key === 'PageDown') show(idx + 1);
+    else if (e.key === 'ArrowLeft' || e.key === 'ArrowUp' || e.key === 'PageUp') show(idx - 1);
+  });
+  show(idx);
+<\/script>
+</body>
+</html>`;
+</script>
+</body>
+</html>
