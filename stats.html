@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>Mixdeck — usage</title>
+<style>
+  * { box-sizing: border-box; }
+  html, body { margin: 0; background: #1a1a1a; color: #e0e0e0; font-family: system-ui, -apple-system, sans-serif; min-height: 100vh; }
+  body { padding: 48px 32px 64px; max-width: 1100px; margin: 0 auto; }
+  header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 40px; }
+  h1 { font-size: 24px; font-weight: 700; letter-spacing: -.5px; margin: 0; }
+  .header-meta { font-size: 12px; color: #888; }
+  .header-meta a { color: #888; text-decoration: none; }
+  .header-meta a:hover { color: #ddd; }
+
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 14px; margin-bottom: 32px; }
+  .card { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 8px; padding: 18px 20px; }
+  .card .label { font-size: 11px; letter-spacing: 1.5px; color: #888; text-transform: uppercase; font-weight: 600; }
+  .card .num { font-size: 42px; font-weight: 800; line-height: 1.1; margin-top: 6px; color: #f5f5f5; letter-spacing: -1.5px; }
+  .card .sub { font-size: 12px; color: #666; margin-top: 4px; }
+  .card .bars { display: flex; align-items: flex-end; gap: 2px; height: 44px; margin-top: 14px; }
+  .card .bars .bar { flex: 1; background: #2563eb; border-radius: 2px 2px 0 0; min-height: 2px; transition: background .15s; position: relative; }
+  .card .bars .bar:hover { background: #3b82f6; }
+  .card .bars .bar.empty { background: #2a2a2a; }
+  .card .bars-axis { display: flex; justify-content: space-between; font-size: 10px; color: #555; margin-top: 6px; }
+
+  .totals { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 8px; padding: 24px; margin-bottom: 32px; }
+  .totals h2 { font-size: 14px; font-weight: 600; color: #ccc; margin: 0 0 16px; text-transform: uppercase; letter-spacing: 1.5px; }
+  .totals-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 14px; }
+  .totals-grid .stat { padding: 12px; background: #161616; border-radius: 6px; }
+  .totals-grid .stat .label { font-size: 10px; letter-spacing: 1.2px; color: #888; text-transform: uppercase; font-weight: 600; }
+  .totals-grid .stat .num { font-size: 28px; font-weight: 700; color: #f5f5f5; margin-top: 4px; }
+
+  .footer { text-align: center; color: #555; font-size: 11px; margin-top: 48px; }
+  .footer a { color: #888; text-decoration: none; }
+  .footer a:hover { color: #ddd; }
+
+  .empty-state { background: #1f1f1f; border: 1px solid #2a2a2a; border-radius: 8px; padding: 32px; text-align: center; color: #888; font-size: 14px; }
+
+  .error { background: #422006; border: 1px solid #5a2d08; color: #fbbf24; padding: 14px 18px; border-radius: 6px; font-size: 13px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Mixdeck — usage</h1>
+  <div class="header-meta">
+    <span id="last-updated">Loading…</span> &nbsp;·&nbsp;
+    <a href="/">← back to app</a>
+  </div>
+</header>
+
+<div id="content">
+  <div class="empty-state">Loading stats…</div>
+</div>
+
+<div class="footer">
+  Aggregate counts only. No cookies, no individual tracking. <a href="/api/stats">raw JSON</a>
+</div>
+
+<script>
+const EVENT_LABELS = {
+  upload: 'Uploads',
+  samples: 'Sample loads',
+  pptx_imported: 'PPTX imports',
+  export: 'Exports',
+  present: 'Present sessions',
+  restore: 'Session restores',
+};
+
+const DAYS_SHOWN = 14;
+
+async function load() {
+  let data;
+  try {
+    const res = await fetch('/api/stats', { cache: 'no-store' });
+    if (!res.ok) throw new Error('status ' + res.status);
+    data = await res.json();
+  } catch (e) {
+    document.getElementById('content').innerHTML = '<div class="error">Couldn\'t load stats: ' + e.message + '</div>';
+    return;
+  }
+
+  const today = new Date();
+  const days = [];
+  for (let i = DAYS_SHOWN - 1; i >= 0; i--) {
+    const d = new Date(today);
+    d.setUTCDate(today.getUTCDate() - i);
+    days.push(d.toISOString().slice(0, 10));
+  }
+
+  // Compute totals
+  const totals = {};
+  let grandTotal = 0;
+  for (const [event, byDay] of Object.entries(data)) {
+    const sum = Object.values(byDay).reduce((a, b) => a + b, 0);
+    totals[event] = sum;
+    grandTotal += sum;
+  }
+
+  let html = '';
+
+  // Totals row
+  html += '<div class="totals"><h2>Last 30 days</h2><div class="totals-grid">';
+  for (const event of Object.keys(EVENT_LABELS)) {
+    html += '<div class="stat"><div class="label">' + EVENT_LABELS[event] + '</div><div class="num">' + (totals[event] || 0) + '</div></div>';
+  }
+  html += '</div></div>';
+
+  // Per-event daily bar charts
+  html += '<div class="grid">';
+  for (const event of Object.keys(EVENT_LABELS)) {
+    const byDay = data[event] || {};
+    const counts = days.map(d => byDay[d] || 0);
+    const max = Math.max(1, ...counts);
+    const todayCount = counts[counts.length - 1];
+
+    html += '<div class="card">';
+    html += '<div class="label">' + EVENT_LABELS[event] + '</div>';
+    html += '<div class="num">' + todayCount + '</div>';
+    html += '<div class="sub">today &middot; ' + (totals[event] || 0) + ' all-time (in window)</div>';
+    html += '<div class="bars">';
+    for (let i = 0; i < counts.length; i++) {
+      const c = counts[i];
+      const h = c === 0 ? 2 : Math.max(2, (c / max) * 100);
+      const cls = c === 0 ? 'bar empty' : 'bar';
+      html += '<div class="' + cls + '" style="height:' + h + '%" title="' + days[i] + ': ' + c + '"></div>';
+    }
+    html += '</div>';
+    html += '<div class="bars-axis"><span>' + days[0].slice(5) + '</span><span>' + days[days.length-1].slice(5) + '</span></div>';
+    html += '</div>';
+  }
+  html += '</div>';
+
+  if (grandTotal === 0) {
+    html = '<div class="empty-state">No usage data yet. Try the app to generate some events, then refresh this page.</div>' + html;
+  }
+
+  document.getElementById('content').innerHTML = html;
+  document.getElementById('last-updated').textContent = 'Updated ' + new Date().toLocaleTimeString();
+}
+
+load();
+setInterval(load, 60000); // auto-refresh every minute
+</script>
+</body>
+</html>
