@@ -40,15 +40,17 @@ Full spec + starter template + AI prompt (paste into Claude/ChatGPT to convert y
 - PPTX animations, transitions, embedded video/audio, and most custom effects don't transfer — slides become static layouts.
 - PowerPoint conversion is approximate (fonts may substitute; complex shapes/charts may render imperfectly).
 - HTML decks must follow the format spec — Reveal.js / Google Slides / Keynote exports need conversion (the splash has an AI prompt for that).
-- No undo / no autosave across tab close — use **Export** before closing if you want to keep your work.
+- No undo. Tab-level autosave only — refreshing offers a one-click restore via a banner; closing the tab clears state. Use **Export** to save permanently as a single HTML file.
 - Reordering can break deck-internal JS state when slides are pulled out of their original sequence.
 - Editing is mouse-only. Presenting works on any device.
 
 ## Tech
 
-- Single file (`index.html`, ~100 KB). Splash + editor + export player all in one.
+- The app itself is a single `index.html` (~100 KB). Splash + editor + export player all in one.
 - Pure vanilla — no framework, no build step, no toolchain.
-- Hosted on Cloudflare Pages, deployed automatically on every push to `main`.
+- `lib/pptx.js` is a vendored copy of the PowerPoint-to-HTML converter (loaded only when a `.pptx` is dropped).
+- Two tiny Cloudflare Pages Functions (`functions/api/event.js`, `functions/api/stats.js`) increment + expose anonymous usage counters in KV.
+- Hosted on Cloudflare Pages. Auto-deploys on every push to `main`.
 
 ## License
 
