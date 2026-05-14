@@ -22,9 +22,10 @@ To run locally:
 ```sh
 git clone https://github.com/alexander-axelsen/mixdeck.git
 cd mixdeck
-python3 -m http.server 8000   # or any static server
-# open http://localhost:8000
+# open index.html in your browser, or serve via any static server
 ```
+
+Opening `index.html` directly works for HTML decks. For `.pptx` import, you need to serve via a static server (browsers block dynamic `import()` over `file://`) — anything works: `python3 -m http.server`, `npx serve`, `caddy file-server`, the IDE's built-in preview, whatever you have.
 
 No build step. Vanilla HTML + CSS + JS. The only dependency is `lib/pptx.js`, vendored.
 
