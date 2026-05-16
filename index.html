@@ -561,7 +561,73 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && document.getElementById('ingest-modal').classList.contains('open')) closeIngestErrorModal();
 });
 
+// Mixdeck's own export is a player shell (iframe + state blob), not a section-per-slide
+// deck — so a naive section.slide scan finds nothing and the user gets a confusing
+// "can't import" modal on their own file. The export embeds full state as JSON in
+// a dedicated <script type="application/json" id="mixdeck-state"> tag; we pull it
+// out and merge into current state so re-importing Just Works.
+function tryParseMixdeckExport(html) {
+  // Cheap pre-check: skip the DOMParser on every dropped file.
+  if (!/id=["']mixdeck-state["']/i.test(html)) return null;
+  const doc = new DOMParser().parseFromString(html, 'text/html');
+  const blob = doc.getElementById('mixdeck-state');
+  if (!blob) return null;
+  try {
+    const data = JSON.parse(blob.textContent);
+    if (!Array.isArray(data.sources) || !Array.isArray(data.manifest)) return null;
+    return data;
+  } catch {
+    return null;
+  }
+}
+
+function ingestMixdeckExport(data) {
+  const wasEmpty = state.sources.length === 0;
+  const idMap = new Map();
+  for (const s of data.sources) {
+    const newId = state.nextSrcId++;
+    idMap.set(s.id, newId);
+    state.sources.push({
+      id: newId,
+      name: s.name,
+      fullHTML: s.fullHTML,
+      headHTML: s.headHTML,
+      bodyScripts: s.bodyScripts,
+      sectionsHTML: s.sectionsHTML,
+      sectionNames: s.sectionNames,
+      count: s.count,
+    });
+  }
+  for (const m of data.manifest) {
+    const remapped = idMap.get(m.sourceId);
+    if (remapped !== undefined) state.manifest.push({ sourceId: remapped, slideIndex: m.slideIndex });
+  }
+  // Adopt settings only on an empty editor — otherwise dropping an export onto
+  // an in-progress timeline would silently clobber the user's current settings.
+  if (wasEmpty) {
+    if (typeof data.pathMode === 'string') state.pathMode = data.pathMode;
+    if (data.labelMode === 'all') state.labelMode = 'all';
+    const nameInput = $('deck-name');
+    if (nameInput && typeof data.deckName === 'string' && data.deckName) {
+      nameInput.value = data.deckName;
+    }
+    if (els.pathBtn) els.pathBtn.textContent = `Path: ${state.pathMode}`;
+    if (els.labelsBtn) {
+      els.labelsBtn.textContent = `Labels: ${state.labelMode}`;
+      els.labelsBtn.style.display = state.pathMode === 'off' ? 'none' : '';
+    }
+  }
+  els.body.classList.add('has-decks');
+  recompute();
+  logEvent('upload');
+}
+
 function ingestFile(name, html) {
+  const exported = tryParseMixdeckExport(html);
+  if (exported) {
+    ingestMixdeckExport(exported);
+    return;
+  }
   const doc = new DOMParser().parseFromString(html, 'text/html');
   const sections = [...doc.querySelectorAll('body > section.slide')];
   if (sections.length === 0) {
@@ -1294,7 +1360,9 @@ function downloadExport() {
       sectionNames: s.sectionNames, count: s.count,
     })),
   };
-  const json = JSON.stringify(data).replace(/<\/script>/gi, '<\\/script>');
+  // Escape every `<` as the JSON unicode form so the embedded blob can never
+  // accidentally close its own <script> tag. JSON.parse turns < back into `<`.
+  const json = JSON.stringify(data).replace(/</g, '\\u003c');
   const escapedTitle = deckName.replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'})[c]);
   const html = PLAYER_TEMPLATE.replace('__TITLE__', escapedTitle).replace('__DATA__', json);
   const blob = new Blob([html], { type: 'text/html' });
@@ -1352,8 +1420,9 @@ const PLAYER_TEMPLATE = `<!DOCTYPE html>
 <div id="stage"><iframe id="frame"></iframe><div id="path-overlay"></div></div>
 <div id="counter"></div>
 <div id="hint">← → to navigate · F for fullscreen</div>
+<script type="application/json" id="mixdeck-state">__DATA__<\/script>
 <script>
-const DATA = __DATA__;
+const DATA = JSON.parse(document.getElementById('mixdeck-state').textContent);
 const SOURCES = DATA.sources;
 const MANIFEST = DATA.manifest;
 const PATH_MODE = DATA.pathMode;
